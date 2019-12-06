@@ -1,0 +1,29 @@
+---
+
+version: "3"
+
+services:
+  app:
+    build:
+      context: ".."
+      dockerfile: ".devcontainer/Dockerfile"
+    user: "code"
+    volumes:
+      # workspace
+      - "..:/workspace"
+      # vim config
+      - "$HOME/.config/nvim:/home/code/.config/nvim:ro"
+      # git config
+      - "$HOME/.config/git:/home/code/.config/git:ro"
+      # ssh config
+      - "$HOME/.config/ssh:/home/code/.config/ssh:ro"
+      - "$HOME/.ssh:/home/code/.ssh:ro"
+      - "$SSH_AUTH_SOCK:/ssh-agent:ro"
+      # docker socket
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - "SSH_AUTH_SOCK=/ssh-agent"
+    working_dir: "/workspace"
+    command: "sleep infinity"
+
+...

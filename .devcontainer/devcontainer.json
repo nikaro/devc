@@ -1,0 +1,11 @@
+{
+    "name": "devc",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "extensions": [
+        "ms-vscode.go"
+    ],
+    "vim-extensions": [],
+    "settings": {}
+}
