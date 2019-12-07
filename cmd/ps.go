@@ -4,16 +4,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
+var psCmd = &cobra.Command{
+	Use:   "ps",
 	Short: "List containers",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		command = append(command, "ps")
-		Run(command)
+		rootCommand = append(rootCommand, "ps")
+		Run(rootCommand)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(psCmd)
 }

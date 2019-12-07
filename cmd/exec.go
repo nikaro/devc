@@ -4,22 +4,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var exeCommand []string
+var execCommand []string
 
 var execCmd = &cobra.Command{
 	Use:   "exec",
 	Short: "Execute a command inside a running container",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		command = append(command, "exec", serviceName)
-		command = append(command, exeCommand...)
-		Run(command)
+		rootCommand = append(rootCommand, "exec", rootServiceName)
+		rootCommand = append(rootCommand, execCommand...)
+		Run(rootCommand)
 	},
 }
 
 func init() {
-	execCmd.PersistentFlags().StringVarP(&serviceName, "service", "s", "", "override service name")
-	execCmd.PersistentFlags().StringArrayVarP(&exeCommand, "command", "c", []string{}, "command and its arguments (required)")
+	execCmd.PersistentFlags().StringVarP(&rootServiceName, "service", "", "", "override service name")
+	execCmd.PersistentFlags().StringArrayVarP(&execCommand, "command", "", []string{}, "command and its arguments (required)")
 	execCmd.MarkPersistentFlagRequired("command")
 
 	rootCmd.AddCommand(execCmd)

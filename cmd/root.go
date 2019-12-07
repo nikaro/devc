@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var projectName string
-var dockerComposeFile string
-var serviceName string
-var command []string
+var rootProjectName string
+var rootDockerComposeFile string
+var rootServiceName string
+var rootCommand []string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -29,20 +29,27 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&projectName, "project-name", "p", "", "alternate project name")
-	rootCmd.PersistentFlags().StringVarP(&dockerComposeFile, "file", "f", "", "alternate Compose file")
+	rootCmd.PersistentFlags().StringVarP(&rootProjectName, "project-name", "p", "", "alternate project name")
+	rootCmd.PersistentFlags().StringVarP(&rootDockerComposeFile, "file", "f", "", "alternate Compose file")
 
-	if projectName == "" {
-		projectName = GetConfig("name")
+	if _, err := os.Stat(".devcontainer/"); err == nil {
+		// load settings only if devcontainer configuration is found
+		if rootProjectName == "" {
+			rootProjectName = GetConfig("name")
+		}
+		if rootDockerComposeFile == "" {
+			rootDockerComposeFile = GetConfig("dockerComposeFile")
+		}
+		rootServiceName = GetConfig("service")
+		rootCommand = append(
+			rootCommand,
+			"docker-compose",
+			"-p", rootProjectName,
+			"-f", rootDockerComposeFile,
+		)
+	} else if len(os.Args) > 1 && os.Args[1] != "completion" && os.Args[1] != "-h" && os.Args[1] != "--help" {
+		// allow usage of help and completion even when no devcontainer config is found
+		fmt.Println("devcontainer directory not found")
+		os.Exit(1)
 	}
-	if dockerComposeFile == "" {
-		dockerComposeFile = GetConfig("dockerComposeFile")
-	}
-	serviceName = GetConfig("service")
-	command = append(
-		command,
-		"docker-compose",
-		"-p", projectName,
-		"-f", dockerComposeFile,
-	)
 }

@@ -4,16 +4,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var shellShell string
+
 var shellCmd = &cobra.Command{
 	Use:   "shell",
-	Short: "Execute a bash shell inside the running devcontainer",
+	Short: "Execute a shell inside the running devcontainer",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		command = append(command, "exec", serviceName, "bash")
-		Run(command)
+		rootCommand = append(rootCommand, "exec", rootServiceName, shellShell)
+		Run(rootCommand)
 	},
 }
 
 func init() {
+	shellCmd.PersistentFlags().StringVarP(&shellShell, "shell", "", "bash", "override shell")
+
 	rootCmd.AddCommand(shellCmd)
 }

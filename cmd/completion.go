@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var output string
+var completionOutput string
 
 var completionCmd = &cobra.Command{
 	Use:   "completion",
@@ -26,8 +26,8 @@ devc completion --output /etc/bash_completion.d/devc
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		out := os.Stdout
-		if output != "" {
-			f, err := os.Create(output)
+		if completionOutput != "" {
+			f, err := os.Create(completionOutput)
 			if err != nil {
 				panic(err)
 			}
@@ -39,7 +39,7 @@ devc completion --output /etc/bash_completion.d/devc
 }
 
 func init() {
-	completionCmd.PersistentFlags().StringVarP(&output, "output", "o", "", "output file (default stdout)")
+	completionCmd.PersistentFlags().StringVarP(&completionOutput, "output", "o", "", "output file (default stdout)")
 
 	rootCmd.AddCommand(completionCmd)
 }
