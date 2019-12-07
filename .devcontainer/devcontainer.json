@@ -6,6 +6,8 @@
     "extensions": [
         "ms-vscode.go"
     ],
-    "vim-extensions": [],
+    "vim-extensions": [
+        "fatih/vim-go"
+    ],
     "settings": {}
 }
