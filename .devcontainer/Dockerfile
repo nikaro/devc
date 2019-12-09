@@ -1,11 +1,11 @@
-FROM registry.ubicast.net/docker/debian-dev:latest
+FROM nikaro/debian-dev:latest
 
 # go path
 ENV GOPATH ${HOME}/go
 # add pyvenv to path
 ENV PATH ${GOPATH}/bin:/usr/local/go/bin:${PATH}
 
-ARG GO_VERSION=1.13.4
+ARG GO_VERSION=1.13.5
 RUN \
     # golang
     sudo curl -LOSs https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
