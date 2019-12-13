@@ -6,9 +6,11 @@ ENV GOPATH ${HOME}/go
 ENV PATH ${GOPATH}/bin:/usr/local/go/bin:${PATH}
 
 ARG GO_VERSION=1.13.5
+ARG GO_SHA256SUM=512103d7ad296467814a6e3f635631bd35574cab3369a97a323c9a585ccaa569
 RUN \
     # golang
     sudo curl -LOSs https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
+	echo -n "${GO_SHA256SUM}	go${GO_VERSION}.linux-amd64.tar.gz" | sha256sum --check --status && \
     sudo tar -C /usr/local/ -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
     sudo rm -f go${GO_VERSION}* && \
     :
