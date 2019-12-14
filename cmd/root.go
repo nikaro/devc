@@ -41,7 +41,6 @@ func check(cmd *cobra.Command, args []string) {
 	if rootPath != "" && !strings.HasSuffix(rootPath, "/") {
 		rootPath += "/"
 	}
-	fmt.Println(rootPath)
 	if _, err := os.Stat(rootPath + ".devcontainer/"); err == nil {
 		// load settings only if devcontainer configuration is found
 		if rootProjectName == "" {
