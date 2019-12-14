@@ -1,24 +1,24 @@
-# DevContainer CLI managment tool
+# Outil de gestion de DevContainer en ligne de commande
 
-## What is a "DevContainer"?
+## Qu'est-ce qu'un "DevContainer" ?
 
-The devcontainer concept have been developped by the authors of Visual Studio Code and its "[Remote - Containers](https://code.visualstudio.com/docs/remote/containers)" extension.
+Le concept de devcontainer a été développé par les auteurs de Vistual Studio Code et de son extension "[Remote - Containers](https://code.visualstudio.com/docs/remote/containers)".
 
 > Work with a sandboxed toolchain or container-based application inside (or mounted into) a container.
 – <https://code.visualstudio.com/docs/remote/remote-overview>
 
-This way you don't mess your computer with all the dependencies of all the projects and their programming languages on which you work on.
-It can also make it easier for others to start working on your projects, without having to guess what are the required tools to develop, lint, test, build, etc.
+Ainsi vous ne pourrissez pas votre ordinateur avec toutes les dépendences de tous vos projets et leur langages de programmation sur lesquels vous travaillez.
+Ça peut aussi permettre de rendre plus facile le démarrage du travail sur vos projets, en évitant d'avoir deviner les outils requis pour développer, tester, construire, etc.
 
 ## Limitations
 
-It currently (and probably forever if nobody send a pull request for it) does not support devcontainer that uses Dokerfile only. A Docker-Compose file is mandatory.
+Actuellement (et peut-être pour toujours si personne n'envoie un patch) ça ne supporte pas les devcontainers qui repose un fichier Dockerfile uniquement. L'utilisation d'un fichier Docker-Compose est obligatoire.
 
-## Install
+## Installation
 
-There are different methods to install `devc`, ordered by preference.
+Il y a différente méthode d'installation possible de `devc`, par ordre de préférence.
 
-To install from the devc devcontainer (requires: docker, docker-compose, make):
+Pour installer avec le devcontainer de "devc" (requiert : docker, docker-compose, make) :
 
 ```
 $ git clone https://git.karolak.fr/nicolas/devc.git
@@ -30,7 +30,7 @@ $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec 
 $ sudo make instal
 ```
 
-To install from sources into `/usr/local/bin/` (requires: golang, make):
+Pour installer depuis les sources (requiert : golang, make) :
 
 ```
 $ git clone https://git.karolak.fr/nicolas/devc.git
@@ -39,13 +39,13 @@ $ make
 $ sudo make install
 ```
 
-To install `devc` in your `GOPATH` (requires: golang):
+Pour installer dans votre `GOPATH` (requiert : golang) :
 
 ```
 $ go get -u git.karolak.fr/nicolas/devc
 ```
 
-## Usage
+## Utilisation
 
 ```
 $ devc --help
@@ -73,16 +73,16 @@ Flags:
 Use "devc [command] --help" for more information about a command.
 ```
 
-## Demo
+## Démonstration
 
 [![asciicast](https://asciinema.org/a/kkM3UIF6YDg8tWjjx1MJgLl6z.svg)](https://asciinema.org/a/kkM3UIF6YDg8tWjjx1MJgLl6z)<Paste>
 
-## Configure (Neo)Vim
+## Configurer (Neo)Vim
 
-With this configuration you can make (Neo)Vim install plugins inside your container (and only inside, not on your host).
+Avec cette configuration vous faire en sorte que (Neo)Vim installe les plugins à l'intérieur de votre conteneur (et uniquement à l'intérieur, pas sur votre machine hôte).
 
 
-`~/.config/nvim/init.vim` with vim-plug as plugin manager:
+`~/.config/nvim/init.vim` avec vim-plug comme gestionnaire de plugins :
 
 ```vimscript
 if &compatible
@@ -94,7 +94,7 @@ call plug#begin('~/.local/share/nvim/site/plugged')
 Plug 'scrooloose/nerdtree'
 [...]
 
-" detect wether we are in a docker container or not
+" détecte si on est dans conteneur docker ou pas
 function! s:IsDocker()
   if filereadable('/.dockerenv')
     return 1
@@ -108,7 +108,7 @@ function! s:IsDocker()
   endif
 endfunction
 
-" install devcontainer plugins if exist and we are in a container
+" installe les plugins si on est dans un conteneur et qu'une configuration existe
 if filereadable('.devcontainer/devcontainer.json') && s:IsDocker()
   let devcontainer = json_decode(readfile('.devcontainer/devcontainer.json'))
     for plugin in get(devcontainer, 'vim-extensions')
@@ -133,8 +133,8 @@ call plug#end()
 }
 ```
 
-And take a look at my [docker-compose.yml](/.devcontainer/docker-compose.yml) and [Dockerfile](/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/debian-dev>) to see how to configure your containers.
+Et jetez un coup d'oeil à mon [docker-compose.yml](/.devcontainer/docker-compose.yml) et [Dockerfile](/.devcontainer/Dockerfile) (basé sur <https://hub.docker.com/r/nikaro/debian-dev>) pour voir comment configurer vos conteneurs.
 
 ## TODO
 
-- add tests
+- ajouter des tests
