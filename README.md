@@ -10,6 +10,10 @@ The devcontainer concept have been developped by the authors of Visual Studio Co
 This way you don't mess your computer with all the dependencies of all the projects and their programming languages on which you work on.
 It can also make it easier for others to start working on your projects, without having to guess what are the required tools to develop, lint, test, build, etc.
 
+## Limitations
+
+It currently (and probably forever if nobody send a pull request for it) does not support devcontainer that uses Dokerfile only. A Docker-Compose file is mandatory.
+
 ## Install
 
 There are different installation methods, ordered by preference.
