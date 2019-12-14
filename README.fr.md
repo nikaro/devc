@@ -133,7 +133,7 @@ call plug#end()
 }
 ```
 
-Et jetez un coup d'oeil à mon [docker-compose.yml](/.devcontainer/docker-compose.yml) et [Dockerfile](/.devcontainer/Dockerfile) (basé sur <https://hub.docker.com/r/nikaro/debian-dev>) pour voir comment configurer vos conteneurs.
+Et jetez un coup d'oeil à mon [docker-compose.yml](/nicolas/devc/src/branch/master/.devcontainer/docker-compose.yml) et [Dockerfile](/nicolas/devc/src/branch/master/.devcontainer/Dockerfile) (basé sur <https://hub.docker.com/r/nikaro/debian-dev>) pour voir comment configurer vos conteneurs.
 
 ## TODO
 
