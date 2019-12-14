@@ -14,7 +14,7 @@ func GetConfig(name string) string {
 	var config string
 
 	// open file
-	jsonFile, err := os.Open(".devcontainer/devcontainer.json")
+	jsonFile, err := os.Open(rootPath + ".devcontainer/devcontainer.json")
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +38,7 @@ func GetConfig(name string) string {
 	// process values
 	switch name {
 	case "dockerComposeFile":
-		dockerComposeFile := ".devcontainer/" + result[name].(string)
+		dockerComposeFile := rootPath + ".devcontainer/" + result[name].(string)
 		// check if exists
 		if _, err := os.Stat(dockerComposeFile); os.IsNotExist(err) {
 			fmt.Println("docker-compose file not found: " + dockerComposeFile)

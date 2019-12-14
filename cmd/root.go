@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
+var rootPath string
 var rootProjectName string
 var rootDockerComposeFile string
 var rootServiceName string
@@ -14,9 +16,10 @@ var rootCommand []string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "devc",
-	Short: "A CLI tool to manage your devcontainers using Docker-Compose",
-	Long:  ``,
+	Use:              "devc",
+	Short:            "A CLI tool to manage your devcontainers using Docker-Compose",
+	Long:             ``,
+	PersistentPreRun: check,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -29,10 +32,17 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringVarP(&rootPath, "project-path", "P", "", "specify project path")
 	rootCmd.PersistentFlags().StringVarP(&rootProjectName, "project-name", "p", "", "alternate project name")
 	rootCmd.PersistentFlags().StringVarP(&rootDockerComposeFile, "file", "f", "", "alternate Compose file")
+}
 
-	if _, err := os.Stat(".devcontainer/"); err == nil {
+func check(cmd *cobra.Command, args []string) {
+	if rootPath != "" && !strings.HasSuffix(rootPath, "/") {
+		rootPath += "/"
+	}
+	fmt.Println(rootPath)
+	if _, err := os.Stat(rootPath + ".devcontainer/"); err == nil {
 		// load settings only if devcontainer configuration is found
 		if rootProjectName == "" {
 			rootProjectName = GetConfig("name")
