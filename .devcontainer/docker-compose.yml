@@ -19,10 +19,15 @@ services:
       - "$HOME/.config/ssh:/home/code/.config/ssh:ro"
       - "$HOME/.ssh:/home/code/.ssh:ro"
       - "$SSH_AUTH_SOCK:/ssh-agent:ro"
+      # gpg config
+      - "$HOME/.config/gnupg:/home/code/.config/gnupg:ro"
       # docker socket
       - "/var/run/docker.sock:/var/run/docker.sock"
+    tmpfs:
+      - "/run/user/1000/:mode=0700,uid=1000,gid=1000"
     environment:
       - "SSH_AUTH_SOCK=/ssh-agent"
+      - "GNUPGHOME=/home/code/.config/gnupg"
     working_dir: "/workspace"
     command: "sleep infinity"
 
