@@ -35,6 +35,7 @@ RUN \
         github.com/rogpeppe/godef \
         github.com/sqs/goreturns \
         golang.org/x/lint/golint \
+        golang.org/x/tools/cmd/goimports \
         golang.org/x/tools/gopls \
     && \
     :
