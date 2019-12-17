@@ -138,3 +138,5 @@ And take a look at my [docker-compose.yml](/nicolas/devc/src/branch/master/.devc
 ## TODO
 
 - add tests
+- add an init command to create boilerplate `.devcontainer/`
+- auto-start devcontainer on shell command
