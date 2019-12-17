@@ -49,7 +49,9 @@ func check(cmd *cobra.Command, args []string) {
 		if rootDockerComposeFile == "" {
 			rootDockerComposeFile = GetConfig("dockerComposeFile")
 		}
-		rootServiceName = GetConfig("service")
+		if rootServiceName == "" {
+			rootServiceName = GetConfig("service")
+		}
 		rootCommand = append(
 			rootCommand,
 			"docker-compose",
