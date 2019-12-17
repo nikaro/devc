@@ -10,7 +10,7 @@ var psCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCommand = append(rootCommand, "ps")
-		Run(rootCommand)
+		Run(rootCommand, rootVerbose)
 	},
 }
 

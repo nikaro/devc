@@ -27,7 +27,7 @@ var buildCmd = &cobra.Command{
 		if buildPull {
 			rootCommand = append(rootCommand, "--pull")
 		}
-		Run(rootCommand)
+		Run(rootCommand, rootVerbose)
 	},
 }
 

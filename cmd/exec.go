@@ -13,7 +13,7 @@ var execCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCommand = append(rootCommand, "exec", rootServiceName)
 		rootCommand = append(rootCommand, execCommand...)
-		Run(rootCommand)
+		Run(rootCommand, rootVerbose)
 	},
 }
 

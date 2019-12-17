@@ -15,7 +15,7 @@ var upCmd = &cobra.Command{
 		if upDetach {
 			rootCommand = append(rootCommand, "--detach")
 		}
-		Run(rootCommand)
+		Run(rootCommand, rootVerbose)
 	},
 }
 

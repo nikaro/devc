@@ -11,6 +11,7 @@ import (
 var rootPath string
 var rootProjectName string
 var rootDockerComposeFile string
+var rootVerbose bool
 var rootServiceName string
 var rootCommand []string
 
@@ -35,6 +36,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&rootPath, "project-path", "P", "", "specify project path")
 	rootCmd.PersistentFlags().StringVarP(&rootProjectName, "project-name", "p", "", "alternate project name")
 	rootCmd.PersistentFlags().StringVarP(&rootDockerComposeFile, "file", "f", "", "alternate Compose file")
+	rootCmd.PersistentFlags().BoolVarP(&rootVerbose, "verbose", "v", false, "show the docker-compose command")
 }
 
 func check(cmd *cobra.Command, args []string) {

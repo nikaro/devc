@@ -23,7 +23,7 @@ var downCmd = &cobra.Command{
 		if downRemoveOrphans {
 			rootCommand = append(rootCommand, "--remove-orphans")
 		}
-		Run(rootCommand)
+		Run(rootCommand, rootVerbose)
 	},
 }
 

@@ -64,8 +64,10 @@ func GetConfig(name string) string {
 }
 
 // Run the given command
-func Run(command []string) error {
-	fmt.Println(strings.Join(command, " "))
+func Run(command []string, verbose bool) error {
+	if verbose {
+		fmt.Println(strings.Join(command, " "))
+	}
 
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Stdin = os.Stdin

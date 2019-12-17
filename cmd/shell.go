@@ -12,7 +12,7 @@ var shellCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCommand = append(rootCommand, "exec", rootServiceName, shellShell)
-		Run(rootCommand)
+		Run(rootCommand, rootVerbose)
 	},
 }
 
