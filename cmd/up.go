@@ -8,7 +8,7 @@ var upDetach bool
 
 var upCmd = &cobra.Command{
 	Use:   "up",
-	Short: "Start devcontainer services",
+	Short: "Create and start devcontainer services",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCommand = append(rootCommand, "up")

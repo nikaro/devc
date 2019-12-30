@@ -10,7 +10,7 @@ var downRemoveOrphans bool
 
 var downCmd = &cobra.Command{
 	Use:   "down",
-	Short: "Stop devcontainer services",
+	Short: "Stop and remove devcontainer containers, networks, images, and volumes",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootCommand = append(rootCommand, "down")
