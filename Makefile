@@ -1,3 +1,7 @@
+PREFIX?=/usr/local
+_INSTDIR=${DESTDIR}${PREFIX}
+BINDIR?=${_INSTDIR}/bin
+MANDIR?=${_INSTDIR}/share/man
 APP=devc
 
 .PHONY: all
@@ -10,9 +14,16 @@ build:
 	@go build -o ${APP} main.go
 
 .PHONY: install
-## install: Install the application into /usr/local/bin/
+## install: Install the application
 install:
-	@install -t /usr/local/bin/ ${APP}
+	@echo "Installing..."
+	@install -t ${BINDIR}/ ${APP}
+
+.PHONY: uninstall
+## uninstall: Uninstall the application
+uninstall:
+	@echo "Uninstalling..."
+	@rm -rf ${BINDIR}/${APP}
 
 .PHONY: run
 ## run: Runs go run main.go
