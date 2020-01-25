@@ -11,7 +11,7 @@ all: build
 ## build: Build the application
 build:
 	@echo "Building..."
-	@go build -o ${APP} main.go
+	@go build -mod vendor -o ${APP} main.go
 
 .PHONY: install
 ## install: Install the application
