@@ -13,6 +13,11 @@ build:
 	@echo "Building..."
 	@go build -mod vendor -o ${APP} main.go
 
+.PHONY: check
+## check: Check that the build is working
+check:
+	@${APP}
+
 .PHONY: install
 ## install: Install the application
 install:
