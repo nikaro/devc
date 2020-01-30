@@ -18,6 +18,12 @@ It currently (and probably forever if nobody send a pull request for it) does no
 
 There are different methods to install `devc`, ordered by preference.
 
+On ArchLinux, from [AUR](https://aur.archlinux.org/packages/devc/):
+
+```
+$ yay -Syu devc
+```
+
 To install from the devc devcontainer (requires: docker, docker-compose, make):
 
 ```
