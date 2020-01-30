@@ -17,6 +17,7 @@ build:
 ## install: Install the application
 install:
 	@echo "Installing..."
+	@mkdir -p ${BINDIR}
 	@install -t ${BINDIR}/ ${APP}
 
 .PHONY: uninstall
