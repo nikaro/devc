@@ -16,7 +16,7 @@ build:
 .PHONY: check
 ## check: Check that the build is working
 check:
-	@${APP}
+	@./${APP}
 
 .PHONY: install
 ## install: Install the application
