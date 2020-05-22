@@ -28,7 +28,7 @@ $ yay -Syu devc
 To install from the devc devcontainer (requires: docker, docker-compose, make):
 
 ```
-$ git clone https://git.karolak.fr/nicolas/devc.git
+$ git clone https://git.sr.ht/~nka/devc
 $ cd devc
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml up -d
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec app bash
@@ -40,7 +40,7 @@ $ sudo make install
 To install from sources into `/usr/local/bin/` (requires: golang, make):
 
 ```
-$ git clone https://git.karolak.fr/nicolas/devc.git
+$ git clone https://git.sr.ht/~nka/devc
 $ cd devc
 $ make
 $ sudo make install
@@ -49,7 +49,7 @@ $ sudo make install
 To install `devc` in your `GOPATH` (requires: golang):
 
 ```
-$ go get -u git.karolak.fr/nicolas/devc
+$ go get -u git.sr.ht/~nka/devc
 ```
 
 Or from GitHub:

@@ -62,5 +62,5 @@ format:
 .PHONY: help
 ## help: Prints this help message
 help:
-	@echo "Usage: \n"
+	@echo -e "Usage: \n"
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
