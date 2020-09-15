@@ -1,12 +1,12 @@
-FROM nikaro/debian-dev:latest
+FROM nikaro/archlinux-dev:latest
 
 # go path
 ENV GOPATH ${HOME}/go
 # add pyvenv to path
 ENV PATH ${GOPATH}/bin:/usr/local/go/bin:${PATH}
 
-ARG GO_VERSION=1.13.5
-ARG GO_SHA256SUM=512103d7ad296467814a6e3f635631bd35574cab3369a97a323c9a585ccaa569
+ARG GO_VERSION=1.15
+ARG GO_SHA256SUM=2d75848ac606061efe52a8068d0e647b35ce487a15bb52272c427df485193602
 RUN \
     # golang
     sudo curl -LOSs https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \

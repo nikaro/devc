@@ -2,12 +2,12 @@
     "name": "devc",
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
-    "workspaceFolder": "/workspace",
     "extensions": [
         "ms-vscode.go"
     ],
+    "settings": {},
     "vim-extensions": [
         "fatih/vim-go"
     ],
-    "settings": {}
+    "vim-settings": []
 }
