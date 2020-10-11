@@ -27,12 +27,12 @@ devc completion --output /etc/bash_completion.d/devc
 	Run: func(cmd *cobra.Command, args []string) {
 		out := os.Stdout
 		if completionOutput != "" {
-			f, err := os.Create(completionOutput)
+			file, err := os.Create(completionOutput)
 			if err != nil {
 				panic(err)
 			}
-			defer f.Close()
-			out = f
+			defer file.Close()
+			out = file
 		}
 		rootCmd.GenBashCompletion(out)
 	},

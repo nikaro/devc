@@ -3,11 +3,14 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "extensions": [
-        "ms-vscode.go"
+        "golang.go"
     ],
     "settings": {},
-    "vim-extensions": [
+    "vimExtensions": [
         "fatih/vim-go"
     ],
-    "vim-settings": []
+    "vimSettings": [
+	  "let g:go_fmt_command = 'goimports'"
+    ],
+    "workspaceFolder": "/workspace"
 }

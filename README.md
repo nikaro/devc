@@ -1,5 +1,7 @@
 # DevContainer CLI managment tool
 
+Do not want to mess your minimal, clean and fine tuned OS installation with a bunch of compilers, linters, debuggers, interpreters, minifiers, unminifiers, beautifiers, etc...? Visual Studio Code nailed it with DevContainers. But do not want to use VSCode neither? That's where devc comes in, it a simple CLI that wrap docker/docker-compose and run the (almost) same commands that VSCode runs behind the scenes.
+
 ## What is a "DevContainer"?
 
 The devcontainer concept have been developped by the authors of Visual Studio Code and its "[Remote - Containers](https://code.visualstudio.com/docs/remote/containers)" extension.
@@ -9,11 +11,6 @@ The devcontainer concept have been developped by the authors of Visual Studio Co
 
 This way you don't mess your computer with all the dependencies of all the projects and their programming languages on which you work on.
 It can also make it easier for others to start working on your projects, without having to guess what are the required tools to develop, lint, test, build, etc.
-
-## Limitations
-
-It currently does not support devcontainer that uses Dokerfile only. A Docker-Compose file is mandatory.
-It also does not support all `devcontainer.json` options.
 
 ## Install
 
@@ -70,28 +67,23 @@ Usage:
 Available Commands:
   build       Build or rebuild devcontainer services
   completion  Generate completion script
-  down        Stop and remove devcontainer containers, networks, images, and volumes
-  exec        Execute a command inside a running container
   help        Help about any command
+  init        Create an initial devcontainer configuration
   ps          List containers
   shell       Execute a shell inside the running devcontainer
   start       Start devcontainer services
   stop        Stop devcontainer services
-  up          Create and start devcontainer services
 
 Flags:
-  -f, --file string           alternate Compose file
-  -h, --help                  help for devc
-  -p, --project-name string   alternate project name
-  -P, --project-path string   specify project path
-  -v, --verbose               show the docker-compose command
+  -h, --help      help for devc
+  -v, --verbose   show commands used
 
 Use "devc [command] --help" for more information about a command.
 ```
 
 ## Demo
 
-[![asciicast](https://asciinema.org/a/kkM3UIF6YDg8tWjjx1MJgLl6z.svg)](https://asciinema.org/a/kkM3UIF6YDg8tWjjx1MJgLl6z)<Paste>
+[![asciicast](https://asciinema.org/a/kkM3UIF6YDg8tWjjx1MJgLl6z.svg)](https://asciinema.org/a/kkM3UIF6YDg8tWjjx1MJgLl6z)
 
 ## Configure (Neo)Vim
 
@@ -146,15 +138,53 @@ call plug#end()
 
 ```json
 {
-    [...]
-    "vim-extensions": [
-        "fatih/vim-go"
-    ],
-	"vim-settings": [
+  [...]
+  "vimExtensions": [
+    "fatih/vim-go"
+  ],
+	"vimSettings": [
 	  "let g:go_fmt_command = 'goimports'"
 	],
-    [...]
+  [...]
 }
 ```
 
-And take a look at my [docker-compose.yml](/nicolas/devc/src/branch/master/.devcontainer/docker-compose.yml) and [Dockerfile](/nicolas/devc/src/branch/master/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/debian-dev>) to see how to configure your containers.
+And take a look at my [docker-compose.yml](/nicolas/devc/src/branch/master/.devcontainer/docker-compose.yml) and [Dockerfile](/nicolas/devc/src/branch/master/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/alpine-dev>) to see how to configure your containers.
+
+## [devcontainer.json](https://code.visualstudio.com/docs/remote/devcontainerjson-reference) properties support
+
+- [x] docker - image
+- [x] docker - build.dockerfile
+- [x] docker - build.context
+- [x] docker - build.args
+- [x] docker - build.target
+- [x] docker - appPort
+- [x] docker - containerEnv
+- [x] docker - remoteEnv
+- [x] docker - containerUser
+- [x] docker - remoteUser
+- [ ] docker - updateRemoteUserUID (do not know how to implement this one)
+- [x] docker - mounts
+- [x] docker - workspaceMount
+- [x] docker - workspaceFolder
+- [x] docker - runArgs
+- [x] docker - overrideCommand
+- [x] ~docker - shutdownAction~ (not applicable)
+- [x] docker-compose - dockerComposeFile
+- [x] docker-compose - service
+- [x] docker-compose - runServices
+- [x] docker-compose - workspaceFolder
+- [x] docker-compose - remoteEnv
+- [x] docker-compose - remoteUser
+- [x] ~docker-compose - shutdownAction~ (not applicable)
+- [x] general - name
+- [x] ~general - extensions~ (not applicable)
+- [x] ~general - settings~ (not applicable)
+- [x] general - forwardPorts (for docker only, for docker-compose use `docker-compose.yml`)
+- [ ] general - postCreateCommand
+- [ ] general - postStartCommand
+- [ ] general - postAttachCommand
+- [ ] general - initializeCommand
+- [x] ~general - userEnvProbe~ (not applicable)
+- [x] ~general - devPort~ (not applicable)
+- [ ] variables

@@ -1,21 +1,13 @@
-FROM nikaro/archlinux-dev:latest
+FROM nikaro/alpine-dev:latest
 
 # go path
 ENV GOPATH ${HOME}/go
 # add pyvenv to path
-ENV PATH ${GOPATH}/bin:/usr/local/go/bin:${PATH}
+ENV PATH ${GOPATH}/bin:${PATH}
 
-ARG GO_VERSION=1.15
-ARG GO_SHA256SUM=2d75848ac606061efe52a8068d0e647b35ce487a15bb52272c427df485193602
 RUN \
     # golang
-    sudo curl -LOSs https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
-	echo -n "${GO_SHA256SUM}	go${GO_VERSION}.linux-amd64.tar.gz" | sha256sum --check --status && \
-    sudo tar -C /usr/local/ -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
-    sudo rm -f go${GO_VERSION}* && \
-    :
-
-RUN \
+    sudo apk add --no-cache go && \
     # go packages
     go get \
         github.com/mdempsky/gocode \
@@ -38,4 +30,5 @@ RUN \
         golang.org/x/tools/cmd/goimports \
         golang.org/x/tools/gopls \
     && \
+    go build -o ${GOPATH}/bin/gocode-gomod github.com/stamblerre/gocode && \
     :

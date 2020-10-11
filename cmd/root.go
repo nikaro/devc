@@ -3,24 +3,23 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
+	"git.sr.ht/nka/devc/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var rootPath string
-var rootProjectName string
-var rootDockerComposeFile string
-var rootVerbose bool
-var rootServiceName string
+var rootBackend string
 var rootCommand []string
+var rootConfig *viper.Viper
+var rootVerbose bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:              "devc",
 	Short:            "A CLI tool to manage your devcontainers using Docker-Compose",
 	Long:             ``,
-	PersistentPreRun: check,
+	PersistentPreRun: preRun,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -33,36 +32,31 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&rootPath, "project-path", "P", "", "specify project path")
-	rootCmd.PersistentFlags().StringVarP(&rootProjectName, "project-name", "p", "", "alternate project name")
-	rootCmd.PersistentFlags().StringVarP(&rootDockerComposeFile, "file", "f", "", "alternate Compose file")
-	rootCmd.PersistentFlags().BoolVarP(&rootVerbose, "verbose", "v", false, "show the docker-compose command")
+	rootCmd.PersistentFlags().BoolVarP(&rootVerbose, "verbose", "v", false, "show commands used")
 }
 
-func check(cmd *cobra.Command, args []string) {
-	if rootPath != "" && !strings.HasSuffix(rootPath, "/") {
-		rootPath += "/"
-	}
-	if _, err := os.Stat(rootPath + ".devcontainer/"); err == nil {
-		// load settings only if devcontainer configuration is found
-		if rootProjectName == "" {
-			rootProjectName = GetConfig("name")
+func preRun(command *cobra.Command, args []string) {
+	if _, err := os.Stat(".devcontainer/devcontainer.json"); err == nil {
+		rootConfig, err = utils.GetConfig()
+		if err != nil {
+			panic(fmt.Errorf("fatal error config file: %s", err))
 		}
-		if rootDockerComposeFile == "" {
-			rootDockerComposeFile = GetConfig("dockerComposeFile")
+
+		if err := utils.CheckMutuallyExclusiveSettings(rootConfig); err != nil {
+			panic(err)
 		}
-		if rootServiceName == "" {
-			rootServiceName = GetConfig("service")
+
+		// determine the command to use
+		if rootConfig.Get("dockerComposeFile") != nil {
+			rootBackend = "dockerCompose"
+		} else if rootConfig.Get("build.dockerfile") != nil {
+			rootBackend = "docker"
+		} else {
+			panic("cannot determine which command to use")
 		}
-		rootCommand = append(
-			rootCommand,
-			"docker-compose",
-			"-p", rootProjectName,
-			"-f", rootDockerComposeFile,
-		)
-	} else if len(os.Args) > 1 && os.Args[1] != "completion" && os.Args[1] != "-h" && os.Args[1] != "--help" {
+	} else if len(os.Args) > 1 && os.Args[1] != "completion" && os.Args[1] != "-h" && os.Args[1] != "--help" && os.Args[1] != "init" {
 		// allow usage of help and completion even when no devcontainer config is found
-		fmt.Println("devcontainer directory not found")
+		fmt.Println("devcontainer settings not found")
 		os.Exit(1)
 	}
 }
