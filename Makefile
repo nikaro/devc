@@ -59,6 +59,11 @@ lint:
 format:
 	@goimports -l -w .
 
+.PHONY: test
+## test: Runs go test
+test:
+	@go test ./...
+
 .PHONY: help
 ## help: Prints this help message
 help:
