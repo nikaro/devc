@@ -25,7 +25,7 @@ $ yay -Syu devc
 To install from the devc devcontainer (requires: docker, docker-compose, make):
 
 ```
-$ git clone https://git.sr.ht/~nka/devc
+$ git clone https://github.com/nikaro/devc.git
 $ cd devc
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml up -d
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec app bash
@@ -37,19 +37,13 @@ $ sudo make install
 To install from sources into `/usr/local/bin/` (requires: golang, make):
 
 ```
-$ git clone https://git.sr.ht/~nka/devc
+$ git clone https://github.com/nikaro/devc.git
 $ cd devc
 $ make
 $ sudo make install
 ```
 
 To install `devc` in your `GOPATH` (requires: golang):
-
-```
-$ go get -u git.sr.ht/~nka/devc
-```
-
-Or from GitHub:
 
 ```
 $ go get -u github.com/nikaro/devc
@@ -149,7 +143,7 @@ call plug#end()
 }
 ```
 
-And take a look at my [docker-compose.yml](/nicolas/devc/src/branch/master/.devcontainer/docker-compose.yml) and [Dockerfile](/nicolas/devc/src/branch/master/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/alpine-dev>) to see how to configure your containers.
+And take a look at my [docker-compose.yml](/.devcontainer/docker-compose.yml) and [Dockerfile](/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/alpine-dev>) to see how to configure your containers.
 
 ## [devcontainer.json](https://code.visualstudio.com/docs/remote/devcontainerjson-reference) properties support
 
