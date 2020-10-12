@@ -34,24 +34,20 @@ func GetConfig() (*viper.Viper, error) {
 
 // CheckMutuallyExclusiveSettings does what its name says
 func CheckMutuallyExclusiveSettings(config *viper.Viper) error {
-	// check for mutally exclusive settings
-	if config.Get("image") != nil && config.Get("dockerFile") != nil {
+	switch {
+	case config.Get("image") != nil && config.Get("dockerFile") != nil:
 		return errors.New("you cannot use both 'image' and 'dockerFile' settings")
-	}
-	if config.Get("image") != nil && config.Get("build.dockerfile") != nil {
+	case config.Get("image") != nil && config.Get("build.dockerfile") != nil:
 		return errors.New("you cannot use both 'image' and 'build.dockerfile' settings")
-	}
-	if config.Get("image") != nil && config.Get("dockerComposeFile") != nil {
+	case config.Get("image") != nil && config.Get("dockerComposeFile") != nil:
 		return errors.New("you cannot use both 'image' and 'dockerComposeFile' settings")
-	}
-	if config.Get("dockerFile") != nil && config.Get("dockerComposeFile") != nil {
+	case config.Get("dockerFile") != nil && config.Get("dockerComposeFile") != nil:
 		return errors.New("you cannot use both 'dockerFile' and 'dockerComposeFile' settings")
-	}
-	if config.Get("build.dockerfile") != nil && config.Get("dockerComposeFile") != nil {
+	case config.Get("build.dockerfile") != nil && config.Get("dockerComposeFile") != nil:
 		return errors.New("you cannot use both 'build.dockerfile' and 'dockerComposeFile' settings")
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 // RemoveFromSlice return a slice of strings without the given string
