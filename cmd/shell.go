@@ -1,15 +1,13 @@
 package cmd
 
 import (
-	"os"
-
 	"git.sr.ht/nka/devc/backend/docker"
 	"git.sr.ht/nka/devc/backend/dockercompose"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var shellBin string
-var shellArgs []string
 
 var shellCmd = &cobra.Command{
 	Use:   "shell",
@@ -18,46 +16,61 @@ var shellCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// ensure it is started
 		startCmd.Run(cmd, args)
-		// append environment variables
-		for remoteEnvKey, remoteEnvValue := range rootConfig.GetStringMapString("remoteEnv") {
-			shellArgs = append(shellArgs, "--env", remoteEnvKey+"="+remoteEnvValue)
-		}
-		// append user
-		if remoteUser := rootConfig.GetString("remoteUser"); remoteUser != "" {
-			shellArgs = append(shellArgs, "--user", remoteUser)
-		} else if containerUser := rootConfig.GetString("containerUser"); containerUser != "" {
-			// fallback to containerUser if set
-			shellArgs = append(shellArgs, "--user", containerUser)
-		}
-		// append workspace
-		if workspaceFolder := rootConfig.GetString("workspaceFolder"); workspaceFolder != "" {
-			shellArgs = append(shellArgs, "--workdir", workspaceFolder)
-		}
+		shellArgs := shellGetCommonArgs(rootConfig)
 		switch rootBackend {
 		case "dockerCompose":
 			projectName := rootConfig.GetString("name") + "_devcontainer"
 			dockerComposeFile := ".devcontainer/" + rootConfig.GetString("dockercomposefile")
-			// append service to start
-			serviceName := rootConfig.GetString("service")
-			shellArgs = append(shellArgs, serviceName)
-			// append shell
-			shellArgs = append(shellArgs, shellBin)
-			// call command with args
-			dockercompose.Exec(rootVerbose, projectName, dockerComposeFile, shellArgs...)
+			shellDockerComposeArgs := append(shellArgs, shellGetDockerComposeArgs(rootConfig)...)
+			dockercompose.Exec(rootVerbose, projectName, dockerComposeFile, shellDockerComposeArgs...)
 		case "docker":
-			// get container name
-			path, _ := os.Getwd()
-			container, _ := docker.GetContainer(path)
-			// append args
-			shellArgs = append(shellArgs, "--interactive", "--tty")
-			// call command with args
-			docker.Exec(rootVerbose, container, shellBin, shellArgs...)
+			shellDockerArgs := append(shellArgs, shellGetDockerArgs(rootConfig)...)
+			shellDocker := docker.New()
+			shellDocker.SetVerbose(rootVerbose)
+			shellDocker.SetArgs(shellDockerArgs)
+			shellDocker.SetCommand([]string{shellBin})
+			shellDocker.Exec()
 		}
 	},
 }
 
+func shellGetCommonArgs(config *viper.Viper) (args []string) {
+	// append environment variables
+	for remoteEnvKey, remoteEnvValue := range config.GetStringMapString("remoteEnv") {
+		args = append(args, "--env", remoteEnvKey+"="+remoteEnvValue)
+	}
+	// append user
+	if remoteUser := config.GetString("remoteUser"); remoteUser != "" {
+		args = append(args, "--user", remoteUser)
+	} else if containerUser := config.GetString("containerUser"); containerUser != "" {
+		// fallback to containerUser if set
+		args = append(args, "--user", containerUser)
+	}
+	// append workspace
+	if workspaceFolder := config.GetString("workspaceFolder"); workspaceFolder != "" {
+		args = append(args, "--workdir", workspaceFolder)
+	}
+
+	return args
+}
+
+func shellGetDockerArgs(config *viper.Viper) (args []string) {
+	args = append(args, "--interactive", "--tty")
+
+	return args
+}
+
+func shellGetDockerComposeArgs(config *viper.Viper) (args []string) {
+	// append service to start
+	args = append(args, config.GetString("service"))
+	// append shell
+	args = append(args, shellBin)
+
+	return args
+}
+
 func init() {
-	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "", "sh", "override shell")
+	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "s", "sh", "override shell")
 
 	rootCmd.AddCommand(shellCmd)
 }

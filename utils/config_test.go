@@ -23,13 +23,3 @@ func TestCheckMutuallyExclusiveSettingsFail(t *testing.T) {
 		t.Errorf("got: %s, want: %s", got, "error")
 	}
 }
-
-func TestRemoveFromSlice(t *testing.T) {
-	got := RemoveFromSlice([]string{"a", "b", "c", "c"}, "c")
-	want := []string{"a", "b"}
-	for i, v := range got {
-		if v != want[i] {
-			t.Errorf("got: %s, want: %s", got, want)
-		}
-	}
-}

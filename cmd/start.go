@@ -6,6 +6,7 @@ import (
 	"git.sr.ht/nka/devc/backend/docker"
 	"git.sr.ht/nka/devc/backend/dockercompose"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var startUp bool
@@ -32,47 +33,54 @@ var startCmd = &cobra.Command{
 				dockercompose.Start(rootVerbose, projectName, dockerComposeFile, startArgs...)
 			}
 		case "docker":
-			path, _ := os.Getwd()
-			container, _ := docker.GetContainer(path)
+			startDocker := docker.New()
+			startDocker.SetVerbose(rootVerbose)
 			// create if it does not exist
-			if container == "" {
-				image := rootConfig.GetString("image")
-				if image != "" {
-					image = docker.GetImageName(path)
+			if startDocker.GetContainer() == "" {
+				if image := rootConfig.GetString("image"); image != "" {
+					startDocker.SetImage(image) // use image from devcontainer.json
+				} else {
 					buildCmd.Run(cmd, args) // ensure image is built
 				}
-				var command []string
 				if rootConfig.GetBool("overrideCommand") {
-					command = append(command, "/bin/sh", "-c", "while sleep 1000; do :; done")
+					startDocker.SetCommand([]string{"/bin/sh", "-c", "while sleep 1000; do :; done"})
 				}
-				createArgs := []string{"--label", "vsch.local.folder=" + path}
-				if mount := rootConfig.GetString("workspaceMount"); mount != "" {
-					createArgs = append(createArgs, "--mount", mount)
-				}
-				for _, mount := range rootConfig.GetStringSlice("mounts") {
-					createArgs = append(createArgs, "--mount", mount)
-				}
-				for _, port := range rootConfig.GetStringSlice("appPort") {
-					createArgs = append(createArgs, "--publish", port)
-				}
-				for _, port := range rootConfig.GetStringSlice("forwardPorts") {
-					createArgs = append(createArgs, "--publish", port)
-				}
-				for containerEnvKey, containerEnvValue := range rootConfig.GetStringMapString("containerEnv") {
-					startArgs = append(startArgs, "--env", containerEnvKey+"="+containerEnvValue)
-				}
-				if containerUser := rootConfig.GetString("containerUser"); containerUser != "" {
-					createArgs = append(createArgs, "--user", containerUser)
-				}
-				for _, runArg := range rootConfig.GetStringSlice("runArgs") {
-					createArgs = append(createArgs, runArg)
-				}
-				docker.Create(rootVerbose, image, command, createArgs...)
-				container, _ = docker.GetContainer(path)
+				startDocker.SetArgs(createGetDockerArgs(rootConfig)) // update args for container creation
+				startDocker.Create()                                 // ensure container is created
+				startDocker.SetArgs([]string{})                      // empty args previously used for creation
+				startDocker.SetContainer("")                         // update container reference with the created one
 			}
-			docker.Start(rootVerbose, container, startArgs...)
+			startDocker.Start()
 		}
 	},
+}
+
+func createGetDockerArgs(config *viper.Viper) (args []string) {
+	path, _ := os.Getwd()
+	args = append(args, "--label", "vsch.local.folder="+path)
+	if mount := config.GetString("workspaceMount"); mount != "" {
+		args = append(args, "--mount", mount)
+	}
+	for _, mount := range config.GetStringSlice("mounts") {
+		args = append(args, "--mount", mount)
+	}
+	for _, port := range config.GetStringSlice("appPort") {
+		args = append(args, "--publish", port)
+	}
+	for _, port := range config.GetStringSlice("forwardPorts") {
+		args = append(args, "--publish", port)
+	}
+	for containerEnvKey, containerEnvValue := range config.GetStringMapString("containerEnv") {
+		startArgs = append(startArgs, "--env", containerEnvKey+"="+containerEnvValue)
+	}
+	if containerUser := config.GetString("containerUser"); containerUser != "" {
+		args = append(args, "--user", containerUser)
+	}
+	for _, runArg := range config.GetStringSlice("runArgs") {
+		args = append(args, runArg)
+	}
+
+	return args
 }
 
 func init() {

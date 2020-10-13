@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"git.sr.ht/nka/devc/backend/docker"
 	"git.sr.ht/nka/devc/backend/dockercompose"
 	"github.com/spf13/cobra"
@@ -25,11 +23,10 @@ var stopCmd = &cobra.Command{
 				dockercompose.Down(rootVerbose, projectName, dockerComposeFile, stopArgs...)
 			}
 		case "docker":
-			path, _ := os.Getwd()
-			container, _ := docker.GetContainer(path)
-			docker.Stop(rootVerbose, container, stopArgs...)
+			stopDocker := docker.New()
+			stopDocker.Stop()
 			if stopDown {
-				docker.Remove(rootVerbose, container)
+				stopDocker.Remove()
 			}
 		}
 	},

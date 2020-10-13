@@ -49,14 +49,3 @@ func CheckMutuallyExclusiveSettings(config *viper.Viper) error {
 		return nil
 	}
 }
-
-// RemoveFromSlice return a slice of strings without the given string
-func RemoveFromSlice(sliceIn []string, remove string) (sliceOut []string) {
-	for _, item := range sliceIn {
-		if item != remove {
-			sliceOut = append(sliceOut, item)
-		}
-	}
-
-	return sliceOut
-}

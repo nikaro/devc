@@ -1,14 +1,11 @@
 package cmd
 
 import (
-	"os"
-
 	"git.sr.ht/nka/devc/backend/docker"
 	"git.sr.ht/nka/devc/backend/dockercompose"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
-
-var buildArgs []string
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
@@ -19,24 +16,29 @@ var buildCmd = &cobra.Command{
 		case "dockerCompose":
 			projectName := rootConfig.GetString("name") + "_devcontainer"
 			dockerComposeFile := ".devcontainer/" + rootConfig.GetString("dockercomposefile")
-			dockercompose.Build(rootVerbose, projectName, dockerComposeFile, buildArgs...)
+			dockercompose.Build(rootVerbose, projectName, dockerComposeFile)
 		case "docker":
-			path, _ := os.Getwd()
-			image := docker.GetImageName(path)
-			dockerFile := ".devcontainer/" + rootConfig.GetString("build.dockerfile")
-			context := rootConfig.GetString("build.context")
-			// append build args
-			buildArgsConfig := rootConfig.GetStringMapString("build.args")
-			for _, buildArg := range buildArgsConfig {
-				buildArgs = append(buildArgs, "--build-arg", buildArg+"="+buildArgsConfig[buildArg])
-			}
-			// append target
-			if target := rootConfig.GetString("build.target"); target != "" {
-				buildArgs = append(buildArgs, "--target", target)
-			}
-			docker.Build(rootVerbose, image, dockerFile, context, buildArgs...)
+			buildDocker := docker.New()
+			buildDocker.SetVerbose(rootVerbose)
+			buildDocker.SetDockerfile(".devcontainer/" + rootConfig.GetString("build.dockerfile"))
+			buildDocker.SetContext(rootConfig.GetString("build.context"))
+			buildDocker.SetArgs(buildGetDockerArgs(rootConfig))
+			buildDocker.Build()
 		}
 	},
+}
+
+func buildGetDockerArgs(config *viper.Viper) (args []string) {
+	// append build args
+	for k, v := range config.GetStringMapString("build.args") {
+		args = append(args, "--build-arg", k+"="+v)
+	}
+	// append target
+	if target := config.GetString("build.target"); target != "" {
+		args = append(args, "--target", target)
+	}
+
+	return args
 }
 
 func init() {
