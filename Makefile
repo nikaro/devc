@@ -11,7 +11,8 @@ all: build
 ## build: Build the application
 build:
 	@echo "Building..."
-	@go build -mod vendor -o ${APP} main.go
+	@env GOOS=linux GOARCH=amd64 go build -mod vendor -o build/${APP}-linux-amd64 main.go
+	@env GOOS=darwin GOARCH=amd64 go build -mod vendor -o build/${APP}-darwin-amd64 main.go
 
 .PHONY: check
 ## check: Check that the build is working
