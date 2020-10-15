@@ -8,6 +8,9 @@ ENV PATH ${GOPATH}/bin:${PATH}
 RUN \
     # golang
     sudo apk add --no-cache go && \
+    :
+
+RUN \
     # go packages
     go get \
         github.com/mdempsky/gocode \

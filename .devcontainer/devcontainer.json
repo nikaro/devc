@@ -5,7 +5,9 @@
     "extensions": [
         "golang.go"
     ],
-    "settings": {},
+    "settings": {
+        "go.formatTool": "goimports"
+    },
     "vimExtensions": [
         "fatih/vim-go"
     ],
