@@ -57,7 +57,7 @@ var shellCmd = &cobra.Command{
 }
 
 func init() {
-	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "", "bash", "override shell")
+	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "", "sh", "override shell")
 
 	rootCmd.AddCommand(shellCmd)
 }
