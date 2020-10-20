@@ -143,7 +143,7 @@ call plug#end()
 }
 ```
 
-And take a look at my [docker-compose.yml](/.devcontainer/docker-compose.yml) and [Dockerfile](/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/alpine-dev>) to see how to configure your containers.
+And take a look at my [docker-compose.yml](/.devcontainer/docker-compose.yml) and [Dockerfile](/.devcontainer/Dockerfile) (based on <https://hub.docker.com/r/nikaro/debian-dev>) to see how to configure your containers.
 
 ## [devcontainer.json](https://code.visualstudio.com/docs/remote/devcontainerjson-reference) properties support
 

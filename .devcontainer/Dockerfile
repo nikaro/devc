@@ -1,13 +1,16 @@
-FROM nikaro/alpine-dev:latest
+FROM nikaro/debian-dev:latest
 
 # go path
 ENV GOPATH ${HOME}/go
-# add pyvenv to path
-ENV PATH ${GOPATH}/bin:${PATH}
+# add go to path
+ENV PATH ${GOPATH}/bin:/opt/go/bin:${PATH}
 
+ENV GO_VERSION 1.15.3
 RUN \
     # golang
-    sudo apk add --no-cache go && \
+    sudo curl -LOSs https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    sudo tar -C /opt -xaf go${GO_VERSION}.linux-amd64.tar.gz && \
+    sudo rm -f go${GO_VERSION}.linux-amd64.tar.gz && \
     :
 
 RUN \
