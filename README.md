@@ -28,9 +28,7 @@ To install from the devc devcontainer (requires: docker, docker-compose, make):
 $ git clone https://github.com/nikaro/devc.git
 $ cd devc
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml up -d
-$ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec app bash
-(container) $ make
-(container) $ exit
+$ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec app make
 $ sudo make install
 ```
 
