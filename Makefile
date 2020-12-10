@@ -50,7 +50,7 @@ run:
 ## clean: Cleans the binary
 clean:
 	@echo "Cleaning..."
-	@rm -rf ${APP}
+	@rm -rf build/
 
 .PHONY: setup
 ## setup: Setup go modules
