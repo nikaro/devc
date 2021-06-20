@@ -3,7 +3,8 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "extensions": [
-        "golang.go"
+        "golang.go",
+        "ms-azuretools.vscode-docker"
     ],
     "settings": {
         "go.formatTool": "goimports"
@@ -12,7 +13,7 @@
         "fatih/vim-go"
     ],
     "vimSettings": [
-	  "let g:go_fmt_command = 'goimports'"
+	    "let g:go_fmt_command = 'goimports'"
     ],
     "workspaceFolder": "/workspace"
 }
