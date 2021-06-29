@@ -3,24 +3,27 @@ _INSTDIR=${DESTDIR}${PREFIX}
 BINDIR?=${_INSTDIR}/bin
 MANDIR?=${_INSTDIR}/share/man
 APP=devc
-TARGET=""
 
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-	TARGET=linux
-endif
-ifeq ($(UNAME_S),Darwin)
-	TARGET=darwin
-endif
+GOOS?=$(shell go env GOOS)
+GOARCH?=$(shell go env GOARCH)
 
 .PHONY: all
 all: build
 
 .PHONY: build
-## build: Build the application
+## build: Build for the current target
 build:
 	@echo "Building..."
-	@env GOOS=${TARGET} GOARCH=amd64 go build -mod vendor -o build/${APP}-${TARGET}-amd64 main.go
+	@env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} main.go
+
+.PHONY: build-all
+## build-all: Build for all targets
+build-all:
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(MAKE) build
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(MAKE) build
+	@env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(MAKE) build
+	@env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(MAKE) build
+	@env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(MAKE) build
 
 .PHONY: check
 ## check: Check that the build is working
@@ -31,9 +34,7 @@ check:
 ## install: Install the application
 install:
 	@echo "Installing..."
-	@cp build/${APP}-${TARGET}-amd64 build/${APP}
-	@mkdir -p ${BINDIR}
-	@install -t ${BINDIR}/ build/${APP}
+	@install -D build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
