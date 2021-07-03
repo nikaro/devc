@@ -6,40 +6,65 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var completionOutput string
-
 var completionCmd = &cobra.Command{
-	Use:   "completion",
+	Use:   "completion [bash|zsh|fish|powershell]",
 	Short: "Generate completion script",
-	Long: `To load completion run:
+	Long: `To load completions:
 
-. <(devc completion)
+Bash:
 
-To configure your bash shell to load completions for each session add to your bashrc:
+  $ source <(devc completion bash)
 
-# ~/.bashrc or ~/.profile
-. <(devc completion)
+  # To load completions for each session, execute once:
+  # Linux:
+  $ devc completion bash > /etc/bash_completion.d/devc
+  # macOS:
+  $ devc completion bash > /usr/local/etc/bash_completion.d/devc
 
-If you have bash-completion installed:
+Zsh:
 
-devc completion --output /etc/bash_completion.d/devc
+  # If shell completion is not already enabled in your environment,
+  # you will need to enable it.  You can execute the following once:
+
+  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+  # To load completions for each session, execute once:
+  $ devc completion zsh > "${fpath[1]}/_devc"
+
+  # You will need to start a new shell for this setup to take effect.
+
+fish:
+
+  $ devc completion fish | source
+
+  # To load completions for each session, execute once:
+  $ devc completion fish > ~/.config/fish/completions/devc.fish
+
+PowerShell:
+
+  PS> devc completion powershell | Out-String | Invoke-Expression
+
+  # To load completions for every new session, run:
+  PS> devc completion powershell > devc.ps1
+  # and source this file from your PowerShell profile.
 `,
+	DisableFlagsInUseLine: true,
+	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+	Args:                  cobra.ExactValidArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		out := os.Stdout
-		if completionOutput != "" {
-			file, err := os.Create(completionOutput)
-			if err != nil {
-				panic(err)
-			}
-			defer file.Close()
-			out = file
+		switch args[0] {
+		case "bash":
+			cmd.Root().GenBashCompletion(os.Stdout)
+		case "zsh":
+			cmd.Root().GenZshCompletion(os.Stdout)
+		case "fish":
+			cmd.Root().GenFishCompletion(os.Stdout, true)
+		case "powershell":
+			cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
 		}
-		rootCmd.GenBashCompletion(out)
 	},
 }
 
 func init() {
-	completionCmd.PersistentFlags().StringVarP(&completionOutput, "output", "o", "", "output file (default stdout)")
-
 	rootCmd.AddCommand(completionCmd)
 }
