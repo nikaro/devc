@@ -3,6 +3,7 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "extensions": [
+        "editorconfig.editorconfig",
         "golang.go",
         "ms-azuretools.vscode-docker"
     ],
