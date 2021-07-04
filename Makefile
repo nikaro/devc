@@ -52,6 +52,7 @@ run:
 clean:
 	@echo "Cleaning..."
 	@rm -rf build/
+	@rm -rf dist/
 
 .PHONY: setup
 ## setup: Setup go modules
