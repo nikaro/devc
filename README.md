@@ -16,26 +16,26 @@ It can also make it easier for others to start working on your projects, without
 
 There are different methods to install `devc`, ordered by preference.
 
-On ArchLinux, from [AUR](https://aur.archlinux.org/packages/devc/):
+On ArchLinux, from [AUR](https://aur.archlinux.org/packages/devc-bin/):
 
 ```
-$ yay -Syu devc
+$ yay -Syu devc-bin
 ```
 
-To install from the devc devcontainer (requires: docker, docker-compose, make):
+To install from the devc devcontainer (requires: docker, docker-compose, go, make):
 
 ```
-$ git clone https://git.sr.ht/nka/devc
+$ git clone https://git.sr.ht/~nka/devc
 $ cd devc
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml up -d
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec app make
 $ sudo make install
 ```
 
-To install from sources into `/usr/local/bin/` (requires: golang, make):
+To install from sources into `/usr/local/bin/` (requires: go, make):
 
 ```
-$ git clone https://git.sr.ht/nka/devc
+$ git clone https://git.sr.ht/~nka/devc
 $ cd devc
 $ make
 $ sudo make install
@@ -44,7 +44,13 @@ $ sudo make install
 To install `devc` in your `GOPATH` (requires: golang):
 
 ```
-$ go get -u git.sr.ht/~nka/devc
+$ go install git.sr.ht/~nka/devc@v1.0.0-alpha.3
+```
+
+To install `devc` with brew:
+
+```
+$ brew install nikaro/tap/devc
 ```
 
 ## Usage
