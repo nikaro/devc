@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"git.sr.ht/nka/devc/utils"
+	"git.sr.ht/~nka/devc/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

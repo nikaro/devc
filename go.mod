@@ -1,4 +1,4 @@
-module git.sr.ht/nka/devc
+module git.sr.ht/~nka/devc
 
 go 1.16
 
