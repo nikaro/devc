@@ -10,10 +10,10 @@ services:
     user: "code"
     volumes:
       # workspace
-      - "..:/workspace"
+      - "$PWD:/workspace"
       # dotfiles
       - "$HOME/.vimrc:/home/code/.vimrc"
-      - "$HOME/.git:/home/code/.git"
+      - "$HOME/.config/git:/home/code/.config/git"
       - "$HOME/.ssh:/home/code/.ssh"
       - "$HOME/.gnupg:/home/code/.gnupg"
       - "$SSH_AUTH_SOCK:/ssh-agent"
