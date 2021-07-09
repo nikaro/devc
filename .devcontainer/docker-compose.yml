@@ -16,6 +16,7 @@ services:
       - "$HOME/.config/git:/home/code/.config/git"
       - "$HOME/.ssh:/home/code/.ssh"
       - "$HOME/.gnupg:/home/code/.gnupg"
+      - "$HOME/.config/fish:/home/code/.config/fish"
       - "$SSH_AUTH_SOCK:/ssh-agent"
     environment:
       - "SSH_AUTH_SOCK=/ssh-agent"

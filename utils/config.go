@@ -26,6 +26,7 @@ func GetConfig() (*viper.Viper, error) {
 	config.SetDefault("build.context", ".")
 	config.SetDefault("updateRemoteUserUID", true)
 	config.SetDefault("overrideCommand", true)
+	config.SetDefault("shell", "sh")
 
 	err := config.ReadInConfig()
 

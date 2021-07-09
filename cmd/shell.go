@@ -17,6 +17,9 @@ var shellCmd = &cobra.Command{
 		// ensure it is started
 		startCmd.Run(cmd, args)
 		shellArgs := shellGetCommonArgs(rootConfig)
+		if shellBin == "" {
+			shellBin = rootConfig.GetString("shell")
+		}
 		switch rootBackend {
 		case "dockerCompose":
 			projectName := rootConfig.GetString("name") + "_devcontainer"
@@ -70,7 +73,7 @@ func shellGetDockerComposeArgs(config *viper.Viper) (args []string) {
 }
 
 func init() {
-	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "s", "sh", "override shell")
+	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "s", "", "override shell")
 
 	rootCmd.AddCommand(shellCmd)
 }

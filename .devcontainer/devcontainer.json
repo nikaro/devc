@@ -16,5 +16,6 @@
     "vimSettings": [
 	    "let g:go_fmt_command = 'goimports'"
     ],
-    "workspaceFolder": "/workspace"
+    "workspaceFolder": "/workspace",
+    "shell": "fish"
 }
