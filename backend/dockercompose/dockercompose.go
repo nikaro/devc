@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"git.sr.ht/~nka/devc/utils"
+	"github.com/nikaro/devc/utils"
 )
 
 func setCommand(projectName string, dockerComposeFile string, action string, args ...string) (command []string) {

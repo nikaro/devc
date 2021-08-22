@@ -1,4 +1,4 @@
-module git.sr.ht/~nka/devc
+module github.com/nikaro/devc
 
 go 1.16
 

@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"git.sr.ht/~nka/devc/backend/docker"
-	"git.sr.ht/~nka/devc/backend/dockercompose"
+	"github.com/nikaro/devc/backend/docker"
+	"github.com/nikaro/devc/backend/dockercompose"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

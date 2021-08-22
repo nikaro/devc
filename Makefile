@@ -34,7 +34,7 @@ check:
 ## install: Install the application
 install:
 	@echo "Installing..."
-	@install -D build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
+	@install build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application

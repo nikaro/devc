@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"git.sr.ht/~nka/devc/utils"
+	"github.com/nikaro/devc/utils"
 )
 
 // Docker type

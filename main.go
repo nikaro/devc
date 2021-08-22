@@ -1,6 +1,6 @@
 package main
 
-import "git.sr.ht/~nka/devc/cmd"
+import "github.com/nikaro/devc/cmd"
 
 func main() {
 	cmd.Execute()

@@ -25,7 +25,7 @@ $ yay -Syu devc-bin
 To install from the devc devcontainer (requires: docker, docker-compose, go, make):
 
 ```
-$ git clone https://git.sr.ht/~nka/devc
+$ git clone https://github.com/nikaro/devc
 $ cd devc
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml up -d
 $ docker-composer -p devc_devcontainer -f .devcontainer/docker-compose.yml exec app make
@@ -35,7 +35,7 @@ $ sudo make install
 To install from sources into `/usr/local/bin/` (requires: go, make):
 
 ```
-$ git clone https://git.sr.ht/~nka/devc
+$ git clone https://github.com/nikaro/devc
 $ cd devc
 $ make
 $ sudo make install
@@ -44,7 +44,7 @@ $ sudo make install
 To install `devc` in your `GOPATH` (requires: golang):
 
 ```
-$ go install git.sr.ht/~nka/devc@v1.0.0-alpha.3
+$ go install github.com/nikaro/devc@v1.0.0-alpha.3
 ```
 
 To install `devc` with brew:
