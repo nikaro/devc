@@ -58,7 +58,7 @@ func (d *Docker) SetImage(image string) {
 	if image != "" {
 		d.image = image
 	} else {
-		d.image = "vsc-" + filepath.Base(d.path) + "-" + utils.Md5Sum(d.path)
+		d.image = "vsc-" + filepath.Base(strings.ToLower(d.path)) + "-" + utils.Md5Sum(d.path)
 	}
 }
 
