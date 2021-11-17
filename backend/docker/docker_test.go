@@ -66,6 +66,17 @@ func TestSetImageEmpty(t *testing.T) {
 	}
 }
 
+func TestSetImageEmptyCapital(t *testing.T) {
+	d := new(Docker)
+	d.path = "Test_Path"
+	d.SetImage("")
+	got := d.image
+	want := "vsc-test_path-5da6ae5928d4a1ce395878ae9c7ea1f6"
+	if got != want {
+		t.Errorf("got: %s, want: %s", got, want)
+	}
+}
+
 func TestSetImage(t *testing.T) {
 	d := new(Docker)
 	d.SetImage("test_image")
