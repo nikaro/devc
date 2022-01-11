@@ -1,4 +1,4 @@
-FROM nikaro/alpine-dev:latest
+FROM alpine:latest
 
 ENV PATH "${HOME}/go/bin:${PATH}"
 
