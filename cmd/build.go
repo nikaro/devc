@@ -21,7 +21,7 @@ var buildCmd = &cobra.Command{
 			buildDocker := docker.New()
 			buildDocker.SetVerbose(rootVerbose)
 			buildDocker.SetDockerfile(".devcontainer/" + rootConfig.GetString("build.dockerfile"))
-			buildDocker.SetContext(rootConfig.GetString("build.context"))
+			buildDocker.SetContext(".devcontainer/" + rootConfig.GetString("build.context"))
 			buildDocker.SetArgs(buildGetDockerArgs(rootConfig))
 			buildDocker.Build()
 		}
