@@ -15,10 +15,6 @@ func GetConfig() (*viper.Viper, error) {
 	config.SetConfigName("devcontainer")
 	config.SetConfigType("json")
 
-	// set aliases
-	config.RegisterAlias("dockerfile", "build.dockerfile")
-	config.RegisterAlias("context", "build.context")
-
 	// set defaults
 	path, _ := os.Getwd()
 	dirName := filepath.Base(path)
@@ -29,6 +25,20 @@ func GetConfig() (*viper.Viper, error) {
 	config.SetDefault("shell", "sh")
 
 	err := config.ReadInConfig()
+
+	dockerFile := config.Get("dockerfile")
+	context := config.Get("context")
+
+	// set aliases
+	config.RegisterAlias("dockerfile", "build.dockerfile")
+	config.RegisterAlias("context", "build.context")
+
+	if dockerFile != nil {
+		config.Set("dockerfile", dockerFile)
+	}
+	if context != nil {
+		config.Set("context", context)
+	}
 
 	return config, err
 }
