@@ -2,10 +2,12 @@ module github.com/nikaro/devc
 
 go 1.16
 
-require github.com/spf13/cobra v1.2.0
+require github.com/spf13/cobra v1.4.0
 
 require (
-	github.com/spf13/viper v1.8.1
-	golang.org/x/text v0.3.6 // indirect
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	github.com/fsnotify/fsnotify v1.5.3 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/pelletier/go-toml v1.9.5 // indirect
+	github.com/spf13/viper v1.11.0
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 )
