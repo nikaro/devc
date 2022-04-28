@@ -58,6 +58,7 @@ clean:
 ## setup: Setup go modules
 setup:
 	@-go mod init
+	@go get -u all
 	@go mod tidy
 	@go mod vendor
 

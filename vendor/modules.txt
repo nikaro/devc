@@ -1,4 +1,4 @@
-# github.com/fsnotify/fsnotify v1.5.3
+# github.com/fsnotify/fsnotify v1.5.4
 ## explicit
 github.com/fsnotify/fsnotify
 # github.com/hashicorp/hcl v1.0.0
@@ -22,7 +22,8 @@ github.com/mitchellh/mapstructure
 # github.com/pelletier/go-toml v1.9.5
 ## explicit
 github.com/pelletier/go-toml
-# github.com/pelletier/go-toml/v2 v2.0.0-beta.8
+# github.com/pelletier/go-toml/v2 v2.0.0
+## explicit
 github.com/pelletier/go-toml/v2
 github.com/pelletier/go-toml/v2/internal/ast
 github.com/pelletier/go-toml/v2/internal/danger
