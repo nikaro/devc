@@ -1,21 +1,11 @@
 {
-    "name": "devc",
-    "dockerComposeFile": "docker-compose.yml",
-    "service": "app",
-    "extensions": [
-        "editorconfig.editorconfig",
-        "golang.go",
-        "ms-azuretools.vscode-docker"
-    ],
-    "settings": {
-        "go.formatTool": "goimports"
-    },
-    "vimExtensions": [
-        "fatih/vim-go"
-    ],
-    "vimSettings": [
-	    "let g:go_fmt_command = 'goimports'"
-    ],
-    "workspaceFolder": "/workspace",
-    "shell": "fish"
+  // "image": "${localEnv:MYIMAGE_NAME}:${localEnv:MYIMAGE_LABEL}"
+  "remoteEnv": {
+    "PATH": "${containerEnv:HOME}/bin:${containerEnv:PATH}"
+  },
+  "build": {
+    "dockerfile": "Dockerfile"
+  }
+  // "dockerComposeFile": "docker-compose.yml",
+  // "service": "app"
 }

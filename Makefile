@@ -1,8 +1,9 @@
+APP=devc
 PREFIX?=/usr/local
 _INSTDIR=${DESTDIR}${PREFIX}
 BINDIR?=${_INSTDIR}/bin
+SHAREDIR?=${_INSTDIR}/share/${APP}
 MANDIR?=${_INSTDIR}/share/man
-APP=devc
 
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
@@ -10,42 +11,91 @@ GOARCH?=$(shell go env GOARCH)
 .PHONY: all
 all: build
 
+.PHONY: setup
+## setup: Setup go modules
+setup:
+	go get -u all
+	go mod tidy
+	go mod vendor
+
 .PHONY: build
 ## build: Build for the current target
 build:
 	@echo "Building..."
-	@env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} main.go
+	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -o build/${APP}-${GOOS}-${GOARCH} .
 
-.PHONY: build-all
-## build-all: Build for all targets
-build-all:
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(MAKE) build
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(MAKE) build
-	@env CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(MAKE) build
-	@env CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(MAKE) build
-	@env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(MAKE) build
+.PHONY: man
+## man: Build manpage
+man:
+	@echo "Building manpage..."
+	build/${APP}-${GOOS}-${GOARCH} man > man/${APP}.1
 
-.PHONY: check
-## check: Check that the build is working
-check:
-	@./${APP}
+.PHONY: completion
+## man: Build completions
+completion:
+	@echo "Building completions..."
+	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}.bash
+	build/${APP}-${GOOS}-${GOARCH} completion fish > completions/${APP}.fish
+	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/${APP}.zsh
 
 .PHONY: install
 ## install: Install the application
 install:
 	@echo "Installing..."
-	@install build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
+	install -d ${BINDIR}
+	install -m 755 build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
+	install -d ${MANDIR}/man1
+	install -m 644 man/${APP}.1 ${MANDIR}/man1/${APP}.1
+	install -d ${SHAREDIR}/../bash-completion/completions
+	install -m644 completions/${APP}.bash ${SHAREDIR}/../bash-completion/completions/${APP}
+	install -d ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
+	install -m644 completions/${APP}.fish ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
+	install -d ${SHAREDIR}/../zsh/site-functions/
+	install -m644 completions/${APP}.zsh ${SHAREDIR}/../zsh/site-functions/_${APP}
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
 uninstall:
 	@echo "Uninstalling..."
-	@rm -rf ${BINDIR}/${APP}
+	rm -f ${BINDIR}/${APP}
+	rm -f ${MANDIR}/man1/${APP}.1
+	rm -f ${SHAREDIR}/*
+	rm -f ${SHAREDIR}/../bash-completion/completions/${APP}
+	rm -f ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
+	rm -f ${SHAREDIR}/../zsh/site-functions/_${APP}
+	rmdir --ignore-fail-on-non-empty ${BINDIR}
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}
+	rmdir --ignore-fail-on-non-empty ${MANDIR}/man1
+	rmdir --ignore-fail-on-non-empty ${MANDIR}
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion/completions
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish/vendor_completions.d
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh/site-functions
+	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh
+
+.PHONY: format
+## format: Runs goimports on the project
+format:
+	@echo "Formatting..."
+	fd -t file -e go -E vendor/ | xargs goimports -l -w
+
+.PHONY: lint
+## lint: Run linters
+lint:
+	@echo "Linting..."
+	golangci-lint run
+
+.PHONY: test
+## test: Runs go test
+test:
+	@echo "Testing..."
+	go test ./...
 
 .PHONY: run
-## run: Runs go run main.go
+## run: Runs go run
 run:
-	go run -race main.go
+	go run -race ${APP}.go
 
 .PHONY: clean
 ## clean: Cleans the binary
@@ -53,29 +103,6 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf build/
 	@rm -rf dist/
-
-.PHONY: setup
-## setup: Setup go modules
-setup:
-	@-go mod init
-	@go get -u all
-	@go mod tidy
-	@go mod vendor
-
-.PHONY: lint
-## lint: Runs golint linter on the project
-lint:
-	@golint .
-
-.PHONY: format
-## format: Runs goimports on the project
-format:
-	@goimports -l -w .
-
-.PHONY: test
-## test: Runs go test
-test:
-	@go test ./...
 
 .PHONY: help
 ## help: Prints this help message
