@@ -1,0 +1,4 @@
+completions/* linguist-vendored
+contrib/* linguist-vendored
+man/* linguist-vendored
+vendor/* linguist-vendored
