@@ -17,8 +17,9 @@ func execCmd(command []string, capture bool) (string, error) {
 	var stdout []byte
 	var err error
 
+	cwd, _ := os.Getwd()
 	cmd := exec.Command(command[0], command[1:]...)
-	log.Info().Str("command", cmd.String()).Send()
+	log.Info().Str("workdir", cwd).Str("command", cmd.String()).Send()
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	if capture {
