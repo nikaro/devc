@@ -2,7 +2,7 @@ APP=devc
 PREFIX?=/usr/local
 _INSTDIR=${DESTDIR}${PREFIX}
 BINDIR?=${_INSTDIR}/bin
-SHAREDIR?=${_INSTDIR}/share/${APP}
+SHAREDIR?=${_INSTDIR}/share
 MANDIR?=${_INSTDIR}/share/man
 
 GOOS?=$(shell go env GOOS)
@@ -27,8 +27,8 @@ build:
 .PHONY: man
 ## man: Build manpage
 man:
-	@echo "Building manpage..."
-	build/${APP}-${GOOS}-${GOARCH} man > man/${APP}.1
+	@echo "Building manpages..."
+	build/${APP}-${GOOS}-${GOARCH} man
 
 .PHONY: completion
 ## man: Build completions
@@ -45,34 +45,33 @@ install:
 	install -d ${BINDIR}
 	install -m 755 build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
 	install -d ${MANDIR}/man1
-	install -m 644 man/${APP}.1 ${MANDIR}/man1/${APP}.1
-	install -d ${SHAREDIR}/../bash-completion/completions
-	install -m644 completions/${APP}.bash ${SHAREDIR}/../bash-completion/completions/${APP}
-	install -d ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
-	install -m644 completions/${APP}.fish ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
-	install -d ${SHAREDIR}/../zsh/site-functions/
-	install -m644 completions/${APP}.zsh ${SHAREDIR}/../zsh/site-functions/_${APP}
+	install -m 644 $(wildcard man/${APP}*.1) ${MANDIR}/man1/
+	install -d ${SHAREDIR}/bash-completion/completions
+	install -m644 completions/${APP}.bash ${SHAREDIR}/bash-completion/completions/${APP}
+	install -d ${SHAREDIR}/fish/vendor_completions.d
+	install -m644 completions/${APP}.fish ${SHAREDIR}/fish/vendor_completions.d/${APP}.fish
+	install -d ${SHAREDIR}/zsh/site-functions
+	install -m644 completions/${APP}.zsh ${SHAREDIR}/zsh/site-functions/_${APP}
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
 uninstall:
 	@echo "Uninstalling..."
 	rm -f ${BINDIR}/${APP}
-	rm -f ${MANDIR}/man1/${APP}.1
-	rm -f ${SHAREDIR}/*
-	rm -f ${SHAREDIR}/../bash-completion/completions/${APP}
-	rm -f ${SHAREDIR}/../fish/vendor_completions.d/${APP}.fish
-	rm -f ${SHAREDIR}/../zsh/site-functions/_${APP}
-	rmdir --ignore-fail-on-non-empty ${BINDIR}
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}
-	rmdir --ignore-fail-on-non-empty ${MANDIR}/man1
-	rmdir --ignore-fail-on-non-empty ${MANDIR}
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion/completions
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../bash-completion
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish/vendor_completions.d
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../fish
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh/site-functions
-	rmdir --ignore-fail-on-non-empty ${SHAREDIR}/../zsh
+	rm -f $(wildcard ${MANDIR}/man1/${APP}*.1)
+	rm -f ${SHAREDIR}/bash-completion/completions/${APP}
+	rm -f ${SHAREDIR}/fish/vendor_completions.d/${APP}.fish
+	rm -f ${SHAREDIR}/zsh/site-functions/_${APP}
+	-rmdir ${BINDIR}
+	-rmdir ${SHAREDIR}
+	-rmdir ${MANDIR}/man1
+	-rmdir ${MANDIR}
+	-rmdir ${SHAREDIR}/bash-completion/completions
+	-rmdir ${SHAREDIR}/bash-completion
+	-rmdir ${SHAREDIR}/fish/vendor_completions.d
+	-rmdir ${SHAREDIR}/fish
+	-rmdir ${SHAREDIR}/zsh/site-functions
+	-rmdir ${SHAREDIR}/zsh
 
 .PHONY: format
 ## format: Runs goimports on the project

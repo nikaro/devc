@@ -7,21 +7,24 @@ import (
 	"github.com/spf13/cobra/doc"
 )
 
+var manOutDir string
+
 func init() {
-	rootCmd.AddCommand(man)
+	manCmd.PersistentFlags().StringVarP(&manOutDir, "output", "o", "man", "output directory")
+	rootCmd.AddCommand(manCmd)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 }
 
 func (d *DevContainer) Man() {
 	header := &doc.GenManHeader{}
-	err := doc.GenMan(rootCmd, header, os.Stdout)
+	err := doc.GenManTree(rootCmd, header, manOutDir)
 	if err != nil {
 		log.Error().Err(err).Send()
 		os.Exit(1)
 	}
 }
 
-var man = &cobra.Command{
+var manCmd = &cobra.Command{
 	Use:    "man",
 	Short:  "Generate manpage",
 	Hidden: true,
