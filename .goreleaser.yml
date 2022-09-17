@@ -20,3 +20,48 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+      - "^ci:"
+      - "typo"
+
+aurs:
+  - name: "devc-bin"
+    homepage: "https://github.con/nikaro/devc"
+    description: "CLI tool to manage your devcontainers."
+    maintainers:
+      - "Nicolas Karolak <nicolas at karolak dot fr>"
+    license: "GPLv3"
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/devc-bin.git"
+    package: |-
+      install -Dm755 "./devc" "${pkgdir}/usr/bin/devc"
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/devc/LICENSE"
+      install -Dm644 "./man/devc*.1" "${pkgdir}/usr/share/man/man1/"
+
+brews:
+  - name: "devc"
+    homepage: "https://github.con/nikaro/devc"
+    description: "CLI tool to manage your devcontainers"
+    license: "GPL-3.0-or-later"
+    tap:
+      owner: "nikaro"
+      name: "homebrew-tap"
+      token: "{{ .Env.GH_PAT }}"
+    folder: "Formula"
+    test: |-
+      system "#{bin}/devc", "--help"
+
+nfpms:
+  - package_name: "devc"
+    homepage: "https://github.con/nikaro/devc"
+    description: "CLI tool to manage your devcontainers."
+    maintainer: "Nicolas Karolak <nicolas@karolak.fr>"
+    license: "GPLv3"
+    formats:
+      - "apk"
+      - "deb"
+      - "rpm"
+    contents:
+      - src: "LICENSE"
+        dst: "/usr/share/licenses/devc/LICENSE"
+      - src: "man/devc*.1"
+        dst: "/usr/share/man/man1/"
