@@ -48,7 +48,7 @@ brews:
       token: "{{ .Env.GH_PAT }}"
     folder: "Formula"
     test: |-
-      system "#{bin}/devc", "--help"
+      system "#{bin}/devc", "init"
 
 nfpms:
   - package_name: "devc"
