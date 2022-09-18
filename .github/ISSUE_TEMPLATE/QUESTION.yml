@@ -1,0 +1,16 @@
+---
+
+name: Question
+description: Ask for help
+labels: ["question"]
+assignees:
+  - nikaro
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Ask your question
+      placeholder: How can i do THIS?
+    validations:
+      required: true
