@@ -1,5 +1,10 @@
 ---
 
+before:
+  hooks:
+    - make man
+    - make completion
+
 builds:
   - env:
       - CGO_ENABLED=0
