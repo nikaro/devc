@@ -1,11 +1,13 @@
 {
-  // "image": "${localEnv:MYIMAGE_NAME}:${localEnv:MYIMAGE_LABEL}"
-  "remoteEnv": {
-    "PATH": "${containerEnv:HOME}/bin:${containerEnv:PATH}"
-  },
   "build": {
     "dockerfile": "Dockerfile"
+  },
+  "mounts": [
+    "type=bind,source=${localEnv:HOME}/.config/nvim/init.lua,destination=/root/.config/nvim/init.lua",
+    "type=bind,source=${localEnv:HOME}/.config/nvim/lua,destination=/root/.config/nvim/lua",
+    "type=bind,source=${localEnv:HOME}/.config/nvim/after,destination=/root/.config/nvim/after"
+  ],
+  "remoteEnv": {
+    "PATH": "${containerEnv:HOME}/go/bin:${containerEnv:PATH}"
   }
-  // "dockerComposeFile": "docker-compose.yml",
-  // "service": "app"
 }
