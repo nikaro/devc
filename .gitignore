@@ -18,6 +18,6 @@
 
 ### Devc ###
 
-devc
+./devc
 build/
 dist/

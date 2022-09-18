@@ -34,9 +34,9 @@ man:
 ## man: Build completions
 completion:
 	@echo "Building completions..."
-	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}.bash
+	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}
 	build/${APP}-${GOOS}-${GOARCH} completion fish > completions/${APP}.fish
-	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/${APP}.zsh
+	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/_${APP}
 
 .PHONY: install
 ## install: Install the application
@@ -47,11 +47,11 @@ install:
 	install -d ${MANDIR}/man1
 	install -m 644 $(wildcard man/${APP}*.1) ${MANDIR}/man1/
 	install -d ${SHAREDIR}/bash-completion/completions
-	install -m644 completions/${APP}.bash ${SHAREDIR}/bash-completion/completions/${APP}
+	install -m644 completions/${APP} ${SHAREDIR}/bash-completion/completions/${APP}
 	install -d ${SHAREDIR}/fish/vendor_completions.d
 	install -m644 completions/${APP}.fish ${SHAREDIR}/fish/vendor_completions.d/${APP}.fish
 	install -d ${SHAREDIR}/zsh/site-functions
-	install -m644 completions/${APP}.zsh ${SHAREDIR}/zsh/site-functions/_${APP}
+	install -m644 completions/_${APP} ${SHAREDIR}/zsh/site-functions/_${APP}
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application

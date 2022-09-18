@@ -1,9 +1,5 @@
 ---
 
-before:
-  hooks:
-    - go mod tidy
-
 builds:
   - env:
       - CGO_ENABLED=0
@@ -14,6 +10,14 @@ builds:
     goarch:
       - amd64
       - arm64
+
+archives:
+  - id: default
+    files:
+      - LICENSE
+      - README.md
+      - completions/*
+      - man/*
 
 changelog:
   filters:
@@ -36,6 +40,9 @@ aurs:
       install -Dm755 "./devc" "${pkgdir}/usr/bin/devc"
       install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/devc/LICENSE"
       install -Dm644 "./man/devc*.1" "${pkgdir}/usr/share/man/man1/"
+      install -Dm644 "./completions/devc" "${pkgdir}/usr/share/bash-completion/completions/"
+      install -Dm644 "./completions/devc.fish" "${pkgdir}/usr/share/fish/vendor_completions.d/"
+      install -Dm644 "./completions/_devc" "${pkgdir}/usr/share/zsh/site-functions/"
 
 brews:
   - name: "devc"
@@ -47,6 +54,11 @@ brews:
       name: "homebrew-tap"
       token: "{{ .Env.GH_PAT }}"
     folder: "Formula"
+    post_install: |-
+      man1.install Dir["man/*"]
+      bash_completion.install "completions/devc"
+      fish_completion.install "completions/devc.fish"
+      zsh_completion.install "completions/_devc"
     test: |-
       system "#{bin}/devc", "init"
 
@@ -65,3 +77,9 @@ nfpms:
         dst: "/usr/share/licenses/devc/LICENSE"
       - src: "man/devc*.1"
         dst: "/usr/share/man/man1/"
+      - src: "completions/devc"
+        dst: "/usr/share/bash-completions/completions/"
+      - src: "completions/devc.fish"
+        dst: "/usr/share/fish/vendor_completions.d/"
+      - src: "completions/_devc"
+        dst: "/usr/share/zsh/site-functions/"
