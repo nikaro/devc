@@ -77,7 +77,7 @@ uninstall:
 ## format: Runs goimports on the project
 format:
 	@echo "Formatting..."
-	fd -t file -e go -E vendor/ | xargs goimports -l -w
+	find . -type f -name '*.go' -not -path './vendor/*' | xargs goimports -l -w
 
 .PHONY: lint
 ## lint: Run linters
