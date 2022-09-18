@@ -7,8 +7,8 @@
 The devcontainer concept come from Visual Studio Code and its "[Remote -
 Containers](https://code.visualstudio.com/docs/remote/containers)" extension.
 
-> Work with a sandboxed toolchain or container-based application inside (or mounted into) a container.
-– <https://code.visualstudio.com/docs/remote/remote-overview>
+> Work with a sandboxed toolchain or container-based application inside (or mounted into) a container.\
+– <https://code.visualstudio.com/docs/remote/containers>
 
 In other words, it lets you install the toolchain of your project in a
 container. This way you don't mess your computer with all the dependencies of
