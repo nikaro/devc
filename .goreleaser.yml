@@ -54,7 +54,8 @@ brews:
       name: "homebrew-tap"
       token: "{{ .Env.GH_PAT }}"
     folder: "Formula"
-    post_install: |-
+    install: |-
+      bin.install "devc"
       man1.install Dir["man/*"]
       bash_completion.install "completions/devc"
       fish_completion.install "completions/devc.fish"
