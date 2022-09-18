@@ -79,9 +79,35 @@ Use "devc [command] --help" for more information about a command.
 
 [![asciicast](https://asciinema.org/a/521932.svg)](https://asciinema.org/a/521932)
 
-## Configure Neovim
+## Neovim
 
 With this snippet you can make Neovim install plugins inside your container (and only inside, not on your host).
+
+`.devcontainer/devcontainer.json`:
+
+```json
+{
+  [...]
+  "mounts": [
+    "type=bind,source=${localEnv:HOME}/.config/nvim/init.lua,destination=/root/.config/nvim/init.lua",
+    "type=bind,source=${localEnv:HOME}/.config/nvim/lua,destination=/root/.config/nvim/lua",
+    "type=bind,source=${localEnv:HOME}/.config/nvim/after,destination=/root/.config/nvim/after"
+  ],
+  "customizations": {
+    "devc_neovim": {
+      "extensions": [
+        "fatih/vim-go"
+      ],
+      "settings": {
+        "vimscript": [
+          "let g:go_fmt_command = 'goimports'"
+        ]
+      }
+    }
+  },
+  [...]
+}
+```
 
 `~/.config/nvim/init.lua` with [packer](https://github.com/wbthomason/packer.nvim) as plugin manager:
 
@@ -111,7 +137,7 @@ return require('packer').startup(function()
   if vim.fn.filereadable('.devcontainer/devcontainer.json') == 1 and vim.fn.filereadable('/.dockerenv') == 1 then
     local devcontainer = vim.fn.json_decode(vim.fn.readfile('.devcontainer/devcontainer.json'))
     local customs = devcontainer.customizations or {}
-    local devc_customs = customs.devc or {}
+    local devc_customs = customs.devc_neovim or {}
     local devc_extensions = devc_customs.extensions or {}
     local devc_settings = devc_customs.settings or {}
 
@@ -137,25 +163,4 @@ return require('packer').startup(function()
   end
 
 end)
-```
-
-`.devcontainer/devcontainer.json`:
-
-```json
-{
-  [...]
-  "customizations": {
-    "devc": {
-      "extensions": [
-        "fatih/vim-go"
-      ],
-      "settings": {
-        "vimscript": [
-          "let g:go_fmt_command = 'goimports'"
-        ]
-      }
-    }
-  },
-  [...]
-}
 ```
