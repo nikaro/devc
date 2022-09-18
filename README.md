@@ -83,7 +83,7 @@ Use "devc [command] --help" for more information about a command.
 
 With this snippet you can make Neovim install plugins inside your container (and only inside, not on your host).
 
-`~/.config/nvim/init.vim` with [packer](https://github.com/wbthomason/packer.nvim) as plugin manager:
+`~/.config/nvim/init.lua` with [packer](https://github.com/wbthomason/packer.nvim) as plugin manager:
 
 ```lua
 -- ensure packer is installed at launch
