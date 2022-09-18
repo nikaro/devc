@@ -121,11 +121,13 @@ return require('packer').startup(function()
 
     for k, v in pairs(devc_settings) do
       if k == 'vimscript' then
-		-- execute vimscript
-        vim.cmd(v)
+        for _, script in ipairs(v) do
+          vim.cmd(script)
+        end
       elseif k == 'lua' then
-		-- execute lua
-        vim.cmd('lua ' .. v)
+        for _, script in ipairs(v) do
+          vim.cmd('lua' .. script)
+        end
       end
     end
   end
@@ -148,7 +150,9 @@ end)
         "fatih/vim-go"
       ],
       "settings": {
-	    "vimscript": "let g:go_fmt_command = 'goimports'"
+        "vimscript": [
+          "let g:go_fmt_command = 'goimports'"
+        ]
       }
     }
   },
