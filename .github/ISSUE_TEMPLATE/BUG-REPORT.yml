@@ -1,0 +1,52 @@
+---
+
+name: Bug Report
+description: File a bug report
+title: "[Bug] "
+labels: ["bug", "triage"]
+assignees:
+  - nikaro
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: repository-url
+    attributes:
+      label: Repository URL
+      description: A repository URL with which we can reproduce the issue.
+      placeholder: https://github.com/nikaro/devc.git
+    validations:
+      required: true
+  - type: textarea
+    id: debug-output
+    attributes:
+      label: Debug output
+      description: |
+        Please copy and paste the output of the command run with `-vv` flag.
+        This will be automatically formatted into code, so no need for backticks.
+      placeholder: |
+        > devc -vv start
+        5:06PM DBG devcontainer="{Build:{Args:map[] CacheFrom: Context: Dockerfile:Dockerfile Target:} ContainerEnv:map[] ContainerUser: Customizations:map[] DockerComposeFile: ForwardPorts:[] Image: Mounts:[type=bind,source=${localEnv:HOME}/.config/nvim/init.lua,destination=/root/.config/nvim/init.lua type=bind,source=${localEnv:HOME}/.config/nvim/lua,destination=/root/.config/nvim/lua type=bind,source=${localEnv:HOME}/.config/nvim/after,destination=/root/.config/nvim/after] Name: OverrideCommand:false RemoteEnv:map[PATH:${containerEnv:HOME}/go/bin:${containerEnv:PATH}] RemoteUser: RunArgs:[] RunServices:[] Service: UpdateRemoteUserUID:false WorkspaceFolder: WorkspaceMount:}"
+        5:06PM INF command="/usr/local/bin/docker container ls --quiet --latest --filter label=devcontainer.local_folder=/Users/nicolas/go/src/github.com/nikaro/devc" workdir=/Users/nicolas/go/src/github.com/nikaro/devc/.devcontainer
+        Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+        5:06PM FTL cannot initialize error="exit status 1"
+      render: Shell
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: What OS are you seeing the problem on?
+      multiple: false
+      options:
+        - macOS
+        - Linux
+        - Windows
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Anything you want to add
+      placeholder: Tell us everything!
