@@ -44,7 +44,6 @@ func (d *Docker) Init(config *DevContainer) error {
 	d.ContainerUser = config.JSON.ContainerUser
 	d.Envs = lo.MapToSlice(config.JSON.ContainerEnv, func(k string, v string) string { return k + "=" + v })
 	d.Image = lo.Ternary(config.JSON.Image != "", config.JSON.Image, "vsc-"+config.WorkingDirectoryName+"-"+md5sum(config.WorkingDirectoryPath))
-	d.Image = "vsc-" + config.WorkingDirectoryName + "-" + md5sum(config.WorkingDirectoryPath)
 	d.ImageBuild.Args = lo.MapToSlice(config.JSON.Build.Args, func(k string, v string) string { return k + "=" + v })
 	d.ImageBuild.CacheFrom = config.JSON.Build.CacheFrom
 	d.ImageBuild.Context = config.JSON.Build.Context
