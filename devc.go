@@ -76,17 +76,26 @@ var log zerolog.Logger
 var rootVerbose int
 
 var rootCmd = &cobra.Command{
-	Use:              "devc",
-	Short:            "devc is a devcontainer managment tool",
-	Long:             ``,
-	PersistentPreRun: preRun,
+	Use:   "devc",
+	Short: "devc is a devcontainer managment tool",
+	Long:  ``,
+	PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		setLogLevel()
+		if lo.None([]string{"completion", "init", "man", "-h", "--help", "help"}, os.Args) {
+			parseConfig()
+			setDefaults()
+			checkConfig()
+			setEngine()
+			devc.resolveVars()
+		}
+	},
 }
 
 func init() {
 	rootCmd.PersistentFlags().CountVarP(&rootVerbose, "verbose", "v", "enable verbose output")
 }
 
-func preRun(_ *cobra.Command, _ []string) {
+func setLogLevel() {
 	log = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
 
 	switch rootVerbose {
@@ -97,62 +106,64 @@ func preRun(_ *cobra.Command, _ []string) {
 	default:
 		zerolog.SetGlobalLevel(zerolog.WarnLevel)
 	}
+}
 
-	noConfigArgs := []string{"completion", "init", "man", "-h", "--help", "help"}
-	if len(os.Args) > 1 && !lo.Contains(noConfigArgs, os.Args[1]) {
-		// return JSONC as JSON
-		_, j, err := jsonc.ReadFromFile(".devcontainer/devcontainer.json")
-		if err != nil {
-			log.Fatal().Err(err).Msg("cannot read devcontainer settings")
-		}
-
-		if err := json.Unmarshal(j, &devc.JSON); err != nil {
-			log.Fatal().Err(err).Msg("cannot parse json")
-		}
-		log.Debug().Str("devcontainer", fmt.Sprintf("%+v", devc.JSON)).Send()
-
-		// set defaults values for mydevcontainer
-		devc.WorkingDirectoryPath, _ = os.Getwd()
-		devc.WorkingDirectoryName = filepath.Base(devc.WorkingDirectoryPath)
-		devc.JSON.Build.Context = lo.Ternary(devc.JSON.Build.Context != "", devc.JSON.Build.Context, ".")
-		devc.JSON.Name = lo.Ternary(devc.JSON.Name != "", devc.JSON.Name, devc.WorkingDirectoryName)
-		devc.JSON.OverrideCommand = lo.Ternary(devc.JSON.OverrideCommand, devc.JSON.OverrideCommand, true)
-		devc.JSON.UpdateRemoteUserUID = lo.Ternary(devc.JSON.UpdateRemoteUserUID, devc.JSON.UpdateRemoteUserUID, true)
-		devc.JSON.WorkspaceFolder = lo.Ternary(devc.JSON.WorkspaceFolder != "", devc.JSON.WorkspaceFolder, "/workspace")
-		devc.JSON.WorkspaceMount = lo.Ternary(devc.JSON.WorkspaceMount != "", devc.JSON.WorkspaceMount, "type=bind,source="+devc.WorkingDirectoryPath+",target="+devc.JSON.WorkspaceFolder+",consistency=cached")
-
-		// check required and conflicting settings
-		if devc.JSON.Image == "" && devc.JSON.Build.Dockerfile == "" && devc.JSON.DockerComposeFile == "" {
-			log.Fatal().Msg("one of these settings is required: 'image', 'build.dockerfile', 'dockerComposeFile'")
-		}
-		if (devc.JSON.Image != "" && devc.JSON.Build.Dockerfile != "") ||
-			(devc.JSON.Image != "" && devc.JSON.DockerComposeFile != "") ||
-			(devc.JSON.Build.Dockerfile != "" && devc.JSON.DockerComposeFile != "") {
-			log.Fatal().Msg("one of these settings conflicts with another one: 'image', 'build.dockerfile', 'dockerComposeFile'")
-		}
-		if devc.JSON.DockerComposeFile != "" && devc.JSON.Service == "" {
-			log.Fatal().Msg("'service' setting is required when using 'dockerComposeFile'")
-		}
-
-		// resolve all vars
-		devc.resolveVars()
-
-		// determine container engine
-		switch {
-		case devc.JSON.Image != "" || devc.JSON.Build.Dockerfile != "":
-			devc.Engine = &Docker{}
-		case devc.JSON.DockerComposeFile != "":
-			devc.Engine = &DockerCompose{}
-		default:
-			log.Fatal().Msg("cannot determine devcontainer engine")
-		}
-
-		// initialize engine
-		if err := devc.Engine.Init(&devc); err != nil {
-			log.Fatal().Err(err).Msg("cannot initialize")
-		}
-		log.Debug().Str("engine", fmt.Sprintf("%+v", devc.Engine)).Send()
+func parseConfig() {
+	// return JSONC as JSON
+	_, j, err := jsonc.ReadFromFile(".devcontainer/devcontainer.json")
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot read devcontainer settings")
 	}
+
+	if err := json.Unmarshal(j, &devc.JSON); err != nil {
+		log.Fatal().Err(err).Msg("cannot parse json")
+	}
+	log.Debug().Str("devcontainer", fmt.Sprintf("%+v", devc.JSON)).Send()
+}
+
+func setDefaults() {
+	// set defaults values for mydevcontainer
+	devc.WorkingDirectoryPath, _ = os.Getwd()
+	devc.WorkingDirectoryName = filepath.Base(devc.WorkingDirectoryPath)
+	devc.JSON.Build.Context = lo.Ternary(devc.JSON.Build.Context != "", devc.JSON.Build.Context, ".")
+	devc.JSON.Name = lo.Ternary(devc.JSON.Name != "", devc.JSON.Name, devc.WorkingDirectoryName)
+	devc.JSON.OverrideCommand = lo.Ternary(devc.JSON.OverrideCommand, devc.JSON.OverrideCommand, true)
+	devc.JSON.UpdateRemoteUserUID = lo.Ternary(devc.JSON.UpdateRemoteUserUID, devc.JSON.UpdateRemoteUserUID, true)
+	devc.JSON.WorkspaceFolder = lo.Ternary(devc.JSON.WorkspaceFolder != "", devc.JSON.WorkspaceFolder, "/workspace")
+	devc.JSON.WorkspaceMount = lo.Ternary(devc.JSON.WorkspaceMount != "", devc.JSON.WorkspaceMount, "type=bind,source="+devc.WorkingDirectoryPath+",target="+devc.JSON.WorkspaceFolder+",consistency=cached")
+}
+
+func checkConfig() {
+	// check required and conflicting settings
+	if devc.JSON.Image == "" && devc.JSON.Build.Dockerfile == "" && devc.JSON.DockerComposeFile == "" {
+		log.Fatal().Msg("one of these settings is required: 'image', 'build.dockerfile', 'dockerComposeFile'")
+	}
+	if (devc.JSON.Image != "" && devc.JSON.Build.Dockerfile != "") ||
+		(devc.JSON.Image != "" && devc.JSON.DockerComposeFile != "") ||
+		(devc.JSON.Build.Dockerfile != "" && devc.JSON.DockerComposeFile != "") {
+		log.Fatal().Msg("one of these settings conflicts with another one: 'image', 'build.dockerfile', 'dockerComposeFile'")
+	}
+	if devc.JSON.DockerComposeFile != "" && devc.JSON.Service == "" {
+		log.Fatal().Msg("'service' setting is required when using 'dockerComposeFile'")
+	}
+}
+
+func setEngine() {
+	// determine container engine
+	switch {
+	case devc.JSON.Image != "" || devc.JSON.Build.Dockerfile != "":
+		devc.Engine = &Docker{}
+	case devc.JSON.DockerComposeFile != "":
+		devc.Engine = &DockerCompose{}
+	default:
+		log.Fatal().Msg("cannot determine devcontainer engine")
+	}
+
+	// initialize engine
+	if err := devc.Engine.Init(&devc); err != nil {
+		log.Fatal().Err(err).Msg("cannot initialize")
+	}
+	log.Debug().Str("engine", fmt.Sprintf("%+v", devc.Engine)).Send()
 }
 
 func main() {
