@@ -2,6 +2,7 @@
 
 before:
   hooks:
+    - make build
     - make man
     - make completion
 
