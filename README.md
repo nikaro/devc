@@ -41,7 +41,7 @@ sudo make install
 * From pre-build binaries and packages
 
 You can get builds for Linux, Windows and macOS, either arm64 or amd64 on the
-[Releases](/releases) page.
+[Releases](https://github.com/nikaro/devc/releases) page.
 
 * From [brew](https://brew.sh)
 
