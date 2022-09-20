@@ -2,6 +2,11 @@
 
 `devc` is a simple CLI tool to manage your devcontainers.
 
+It supports a subset of the [devcontainer.json
+specification](https://containers.dev/implementors/json_reference/). Feel free
+to submit a pull request or [send a patch](mailto:github+devc@karolak.fr) if
+you need a missing part of it.
+
 ## What is a "DevContainer"?
 
 The devcontainer concept come from Visual Studio Code and its "[Remote -
@@ -36,7 +41,7 @@ sudo make install
 * From pre-build binaries and packages
 
 You can get builds for Linux, Windows and macOS, either arm64 or amd64 on the
-[Releases](https://github.com/nikaro/devc/releases) page.
+[Releases](/releases) page.
 
 * From [brew](https://brew.sh)
 
