@@ -28,10 +28,10 @@ archives:
 changelog:
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-      - "^ci:"
-      - "typo"
+      - '^docs'
+      - '^test'
+      - "^ci"
+      - "^typo"
 
 aurs:
   - name: "devc-bin"
