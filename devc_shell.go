@@ -34,9 +34,6 @@ var shellCmd = &cobra.Command{
 	Short: "Execute a shell inside devcontainer",
 	Run: func(_ *cobra.Command, _ []string) {
 		// ensure it is started before attaching starting a shell
-		// PS: otherwise the shellPostAttach goroutine does not know about how
-		// to find the container in which it must executes its commands, maybe
-		// it could be solved with a channel but i don't know how
 		devc.Start()
 		// run asynchronously to avoid blocking shell attach
 		go devc.shellPostAttach()
