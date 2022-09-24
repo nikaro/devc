@@ -52,6 +52,7 @@ type DevContainerJSON struct {
 	Mounts              []string              `json:"mounts,omitempty"`
 	Name                string                `json:"name,omitempty"`
 	OverrideCommand     bool                  `json:"overrideCommand,omitempty"`
+	PostAttachCommand   []string              `json:"postAttachCommand,omitempty"`
 	PostStartCommand    []string              `json:"postStartCommand,omitempty"`
 	RemoteEnv           map[string]string     `json:"remoteEnv,omitempty"`
 	RemoteUser          string                `json:"remoteUser,omitempty"`
