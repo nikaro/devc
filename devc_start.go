@@ -20,7 +20,7 @@ var startCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		devc.Start()
 		if len(devc.JSON.PostStartCommand) > 0 {
-			if _, err := devc.Engine.Exec(devc.JSON.PostStartCommand, false, false); err != nil {
+			if _, err := devc.Engine.Exec(devc.JSON.PostStartCommand, true, false); err != nil {
 				log.Fatal().Err(err).Msg("cannot execute postStartCommand")
 			}
 		}
