@@ -48,6 +48,7 @@ type DevContainerJSON struct {
 	DockerComposeFile   string                `json:"dockerComposeFile,omitempty"`
 	ForwardPorts        []string              `json:"forwardPorts,omitempty"`
 	Image               string                `json:"image,omitempty"`
+	InitializeCommand   []string              `json:"initializeCommand,omitempty"`
 	Mounts              []string              `json:"mounts,omitempty"`
 	Name                string                `json:"name,omitempty"`
 	OverrideCommand     bool                  `json:"overrideCommand,omitempty"`
@@ -85,8 +86,9 @@ var rootCmd = &cobra.Command{
 			parseConfig()
 			setDefaults()
 			checkConfig()
-			setEngine()
+			initializeCommand()
 			devc.resolveVars()
+			setEngine()
 		}
 	},
 }
@@ -164,6 +166,14 @@ func setEngine() {
 		log.Fatal().Err(err).Msg("cannot initialize")
 	}
 	log.Debug().Str("engine", fmt.Sprintf("%+v", devc.Engine)).Send()
+}
+
+func initializeCommand() {
+	if len(devc.JSON.InitializeCommand) > 0 {
+		if _, err := execCmd(devc.JSON.InitializeCommand, false); err != nil {
+			log.Fatal().Err(err).Msg("cannot run initializeCommand")
+		}
+	}
 }
 
 func main() {
