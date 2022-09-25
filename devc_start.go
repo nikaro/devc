@@ -14,15 +14,19 @@ func (d *DevContainer) Start() {
 	}
 }
 
+func (d *DevContainer) PostStart() {
+	if len(devc.JSON.PostStartCommand) > 0 {
+		if _, err := devc.Engine.Exec(devc.JSON.PostStartCommand, true, false); err != nil {
+			log.Fatal().Err(err).Msg("cannot execute postStartCommand")
+		}
+	}
+}
+
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start devcontainer",
 	Run: func(_ *cobra.Command, _ []string) {
 		devc.Start()
-		if len(devc.JSON.PostStartCommand) > 0 {
-			if _, err := devc.Engine.Exec(devc.JSON.PostStartCommand, true, false); err != nil {
-				log.Fatal().Err(err).Msg("cannot execute postStartCommand")
-			}
-		}
+		devc.PostStart()
 	},
 }

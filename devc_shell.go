@@ -19,7 +19,7 @@ func (d *DevContainer) Shell() {
 	}
 }
 
-func (d *DevContainer) shellPostAttach() {
+func (d *DevContainer) PostAttach() {
 	if len(devc.JSON.PostAttachCommand) > 0 {
 		// wait a bit to ensure shell is started
 		time.Sleep(1 * time.Second)
@@ -36,7 +36,7 @@ var shellCmd = &cobra.Command{
 		// ensure it is started before attaching starting a shell
 		devc.Start()
 		// run asynchronously to avoid blocking shell attach
-		go devc.shellPostAttach()
+		go devc.PostAttach()
 		devc.Shell()
 	},
 }
