@@ -79,6 +79,8 @@ type DevContainer struct {
 	WorkingDirectoryName string
 }
 
+var version string
+
 // global devcontainer var
 var devc DevContainer
 
@@ -116,6 +118,7 @@ func init() {
 
 var rootCmd = &cobra.Command{
 	Use:              "devc",
+	Version:          version,
 	Short:            "devc is a devcontainer managment tool",
 	Long:             ``,
 	PersistentPreRun: devc.PreRun,
