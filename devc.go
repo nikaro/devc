@@ -10,36 +10,20 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
-	"path/filepath"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/samber/lo"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"muzzammil.xyz/jsonc"
+	"github.com/spf13/cobra/doc"
 )
 
-type DevContainer struct {
-	Engine               Engine
-	JSON                 DevContainerJSON
-	WorkingDirectoryPath string
-	WorkingDirectoryName string
-}
+// global log var
+var log zerolog.Logger
 
-type Engine interface {
-	Init(config *DevContainer) error
-	IsRunning() (bool, error)
-	Build() (string, error)
-	Create() (string, error)
-	Remove() (string, error)
-	Start() (string, error)
-	Stop() (string, error)
-	List() (string, error)
-	Exec(command []string, withEnv bool, capture bool) (string, error)
-	ResolveEnv(env string) string
-}
-
+// devcontainer.json structure
 type DevContainerJSON struct {
 	Build               DevContainerJSONBuild `json:"build,omitempty"`
 	ContainerEnv        map[string]string     `json:"containerEnv,omitempty"`
@@ -65,7 +49,6 @@ type DevContainerJSON struct {
 	WorkspaceFolder     string                `json:"workspaceFolder,omitempty"`
 	WorkspaceMount      string                `json:"workspaceMount,omitempty"`
 }
-
 type DevContainerJSONBuild struct {
 	Args       map[string]string `json:"args,omitempty"`
 	CacheFrom  string            `json:"cacheFrom,omitempty"`
@@ -74,111 +57,245 @@ type DevContainerJSONBuild struct {
 	Target     string            `json:"target,omitempty"`
 }
 
+// interface that each engine (docker, compose, podman, k8s, etc.) must implement
+type Engine interface {
+	Init(config *DevContainer) error
+	IsRunning() (bool, error)
+	Build() (string, error)
+	Create() (string, error)
+	Remove() (string, error)
+	Start() (string, error)
+	Stop() (string, error)
+	List() (string, error)
+	Exec(command []string, withEnv bool, capture bool) (string, error)
+	ResolveEnv(env string) string
+}
+
+// devcontainer meta-structure
+type DevContainer struct {
+	Engine               Engine
+	JSON                 DevContainerJSON
+	WorkingDirectoryPath string
+	WorkingDirectoryName string
+}
+
+// global devcontainer var
 var devc DevContainer
 
-var log zerolog.Logger
+// DEVC COMMANDS
 
+// cli args
 var rootVerbose int
-
-var rootCmd = &cobra.Command{
-	Use:   "devc",
-	Short: "devc is a devcontainer managment tool",
-	Long:  ``,
-	PersistentPreRun: func(_ *cobra.Command, _ []string) {
-		setLogLevel()
-		if lo.None([]string{"completion", "init", "man", "-h", "--help", "help"}, os.Args) {
-			parseConfig()
-			setDefaults()
-			checkConfig()
-			initializeCommand()
-			devc.resolveVars()
-			setEngine()
-		}
-	},
-}
+var initJSON []byte
+var manOutDir string
+var shellBin string
+var stopRemove bool
 
 func init() {
+	// devc command
 	rootCmd.PersistentFlags().CountVarP(&rootVerbose, "verbose", "v", "enable verbose output")
+	// build sub-command
+	rootCmd.AddCommand(buildCmd)
+	// init sub-command
+	rootCmd.AddCommand(initCmd)
+	// list sub-command
+	rootCmd.AddCommand(listCmd)
+	// man sub-command
+	manCmd.PersistentFlags().StringVarP(&manOutDir, "output", "o", "man", "output directory")
+	rootCmd.AddCommand(manCmd)
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+	// shell sub-command
+	shellCmd.PersistentFlags().StringVarP(&shellBin, "shell", "s", "sh", "override shell")
+	rootCmd.AddCommand(shellCmd)
+	// start sub-command
+	rootCmd.AddCommand(startCmd)
+	// stop sub-command
+	stopCmd.PersistentFlags().BoolVarP(&stopRemove, "remove", "r", false, "remove containers and networks")
+	rootCmd.AddCommand(stopCmd)
 }
 
-func setLogLevel() {
-	log = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
+var rootCmd = &cobra.Command{
+	Use:              "devc",
+	Short:            "devc is a devcontainer managment tool",
+	Long:             ``,
+	PersistentPreRun: devc.PreRun,
+}
 
-	switch rootVerbose {
-	case 1:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	case 2:
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	default:
-		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+var buildCmd = &cobra.Command{
+	Use:   "build",
+	Short: "Build devcontainer",
+	Run:   devc.Build,
+}
+
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize devcontainer configuration",
+	Run:   devc.Init,
+}
+
+var listCmd = &cobra.Command{
+	Use:     "list",
+	Aliases: []string{"ls", "ps"},
+	Short:   "List devcontainers",
+	Run:     devc.List,
+}
+
+var manCmd = &cobra.Command{
+	Use:    "man",
+	Short:  "Generate manpage",
+	Hidden: true,
+	Run:    devc.Man,
+}
+
+var shellCmd = &cobra.Command{
+	Use:   "shell",
+	Short: "Execute a shell inside devcontainer",
+	Run:   devc.Shell,
+}
+
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start devcontainer",
+	Run:   devc.Start,
+}
+
+var stopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop devcontainer",
+	Run:   devc.Stop,
+}
+
+func (d *DevContainer) PreRun(_ *cobra.Command, _ []string) {
+	d.SetLogLevel()
+	if lo.None([]string{"completion", "init", "man", "-h", "--help", "help"}, os.Args) {
+		d.ParseConfig()
+		d.SetDefaults()
+		d.CheckConfig()
+		d.InitializeCommand()
+		d.ResolveVars()
+		d.SetEngine()
 	}
 }
 
-func parseConfig() {
-	// return JSONC as JSON
-	_, j, err := jsonc.ReadFromFile(".devcontainer/devcontainer.json")
+func (d *DevContainer) Build(_ *cobra.Command, _ []string) {
+	if _, err := d.Engine.Build(); err != nil {
+		log.Fatal().Err(err).Msg("cannot build")
+	}
+	if _, err := d.Engine.Create(); err != nil {
+		log.Fatal().Err(err).Msg("cannot create")
+	}
+	d.OnCreateCommand()
+	// TODO: figure out what updateContentCommand does and add it
+	// go d.UpdateContent()
+	d.PostCreateCommand()
+}
+
+func (d *DevContainer) Init(_ *cobra.Command, _ []string) {
+	fs := afero.NewOsFs()
+	if exists, _ := afero.DirExists(fs, ".devcontainer"); !exists {
+		if err := fs.Mkdir(".devcontainer", 0755); err != nil {
+			log.Fatal().Err(err).Msg("cannot create .devcontainer directory")
+		}
+		log.Info().Msg(".devcontainer directory created")
+	}
+	if exists, _ := afero.Exists(fs, ".devcontainer/devcontainer.json"); !exists {
+		d.JSON.Image = "alpine:latest"
+		initJSON, _ = json.MarshalIndent(d.JSON, "", "  ")
+		if err := afero.WriteFile(fs, ".devcontainer/devcontainer.json", initJSON, 0644); err != nil {
+			log.Fatal().Err(err).Msg("cannot write devcontainer.json file")
+		}
+		log.Info().Msg("devcontainer.json file created")
+	}
+}
+
+func (d *DevContainer) List(_ *cobra.Command, _ []string) {
+	if _, err := d.Engine.List(); err != nil {
+		log.Fatal().Err(err).Msg("cannot list")
+	}
+}
+
+func (d *DevContainer) Man(_ *cobra.Command, _ []string) {
+	header := &doc.GenManHeader{}
+	err := doc.GenManTree(rootCmd, header, manOutDir)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot read devcontainer settings")
-	}
-
-	if err := json.Unmarshal(j, &devc.JSON); err != nil {
-		log.Fatal().Err(err).Msg("cannot parse json")
-	}
-	log.Debug().Str("devcontainer", fmt.Sprintf("%+v", devc.JSON)).Send()
-}
-
-func setDefaults() {
-	// set defaults values for mydevcontainer
-	devc.WorkingDirectoryPath, _ = os.Getwd()
-	devc.WorkingDirectoryName = filepath.Base(devc.WorkingDirectoryPath)
-	devc.JSON.Build.Context = lo.Ternary(devc.JSON.Build.Context != "", devc.JSON.Build.Context, ".")
-	devc.JSON.Name = lo.Ternary(devc.JSON.Name != "", devc.JSON.Name, devc.WorkingDirectoryName)
-	devc.JSON.OverrideCommand = lo.Ternary(devc.JSON.OverrideCommand, devc.JSON.OverrideCommand, true)
-	devc.JSON.UpdateRemoteUserUID = lo.Ternary(devc.JSON.UpdateRemoteUserUID, devc.JSON.UpdateRemoteUserUID, true)
-	devc.JSON.WorkspaceFolder = lo.Ternary(devc.JSON.WorkspaceFolder != "", devc.JSON.WorkspaceFolder, "/workspace")
-	devc.JSON.WorkspaceMount = lo.Ternary(devc.JSON.WorkspaceMount != "", devc.JSON.WorkspaceMount, "type=bind,source="+devc.WorkingDirectoryPath+",target="+devc.JSON.WorkspaceFolder+",consistency=cached")
-}
-
-func checkConfig() {
-	// check required and conflicting settings
-	if devc.JSON.Image == "" && devc.JSON.Build.Dockerfile == "" && devc.JSON.DockerComposeFile == "" {
-		log.Fatal().Msg("one of these settings is required: 'image', 'build.dockerfile', 'dockerComposeFile'")
-	}
-	if (devc.JSON.Image != "" && devc.JSON.Build.Dockerfile != "") ||
-		(devc.JSON.Image != "" && devc.JSON.DockerComposeFile != "") ||
-		(devc.JSON.Build.Dockerfile != "" && devc.JSON.DockerComposeFile != "") {
-		log.Fatal().Msg("one of these settings conflicts with another one: 'image', 'build.dockerfile', 'dockerComposeFile'")
-	}
-	if devc.JSON.DockerComposeFile != "" && devc.JSON.Service == "" {
-		log.Fatal().Msg("'service' setting is required when using 'dockerComposeFile'")
+		log.Error().Err(err).Send()
+		os.Exit(1)
 	}
 }
 
-func setEngine() {
-	// determine container engine
-	switch {
-	case devc.JSON.Image != "" || devc.JSON.Build.Dockerfile != "":
-		devc.Engine = &Docker{}
-	case devc.JSON.DockerComposeFile != "":
-		devc.Engine = &DockerCompose{}
-	default:
-		log.Fatal().Msg("cannot determine devcontainer engine")
+func (d *DevContainer) Shell(cmd *cobra.Command, args []string) {
+	// ensure it is started before starting a shell
+	d.Start(cmd, args)
+	// run asynchronously to avoid blocking shell start
+	go d.PostAttachCommand()
+	if _, err := d.Engine.Exec([]string{shellBin}, true, false); err != nil {
+		log.Fatal().Err(err).Msg("cannot execute a shell")
 	}
-
-	// initialize engine
-	if err := devc.Engine.Init(&devc); err != nil {
-		log.Fatal().Err(err).Msg("cannot initialize")
-	}
-	log.Debug().Str("engine", fmt.Sprintf("%+v", devc.Engine)).Send()
 }
 
-func initializeCommand() {
+func (d *DevContainer) Start(_ *cobra.Command, _ []string) {
+	if _, err := d.Engine.Start(); err != nil {
+		log.Fatal().Err(err).Msg("cannot start")
+	}
+	d.PostStartCommand()
+}
+
+func (d *DevContainer) Stop(_ *cobra.Command, _ []string) {
+	if _, err := d.Engine.Stop(); err != nil {
+		log.Fatal().Err(err).Msg("cannot stop")
+	}
+	if stopRemove {
+		if _, err := d.Engine.Remove(); err != nil {
+			log.Fatal().Err(err).Msg("cannot remove")
+		}
+	}
+}
+
+// INIT/POST/ON STEPS
+
+func (d *DevContainer) InitializeCommand() {
 	if len(devc.JSON.InitializeCommand) > 0 {
 		if _, err := execCmd(devc.JSON.InitializeCommand, false); err != nil {
 			log.Fatal().Err(err).Msg("cannot run initializeCommand")
 		}
 	}
 }
+
+func (d *DevContainer) OnCreateCommand() {
+	if len(d.JSON.OnCreateCommand) > 0 {
+		if _, err := d.Engine.Exec(d.JSON.OnCreateCommand, true, false); err != nil {
+			log.Fatal().Err(err).Msg("cannot execute onCreateCommand")
+		}
+	}
+}
+
+func (d *DevContainer) PostCreateCommand() {
+	if len(d.JSON.PostCreateCommand) > 0 {
+		if _, err := d.Engine.Exec(d.JSON.PostCreateCommand, true, false); err != nil {
+			log.Fatal().Err(err).Msg("cannot execute postCreateCommand")
+		}
+	}
+}
+
+func (d *DevContainer) PostAttachCommand() {
+	if len(devc.JSON.PostAttachCommand) > 0 {
+		// wait a bit to ensure shell is started
+		time.Sleep(1 * time.Second)
+		if _, err := devc.Engine.Exec(devc.JSON.PostAttachCommand, true, false); err != nil {
+			log.Fatal().Err(err).Msg("cannot execute postAttachCommand")
+		}
+	}
+}
+
+func (d *DevContainer) PostStartCommand() {
+	if len(devc.JSON.PostStartCommand) > 0 {
+		if _, err := devc.Engine.Exec(devc.JSON.PostStartCommand, true, false); err != nil {
+			log.Fatal().Err(err).Msg("cannot execute postStartCommand")
+		}
+	}
+}
+
+// MAIN
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {

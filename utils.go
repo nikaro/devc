@@ -3,13 +3,17 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/rs/zerolog"
 	"github.com/samber/lo"
+	"muzzammil.xyz/jsonc"
 )
 
 // runs the given command while attaching stdin, stdout and stderr
@@ -48,6 +52,7 @@ type matchStore struct {
 	New string
 }
 
+// replace all matches of the regexp in the string with the resolved value
 func replace(s string, r *regexp.Regexp, f resolve) string {
 	if r.MatchString(s) {
 		matches := r.FindAllStringSubmatchIndex(s, -1)
@@ -63,6 +68,7 @@ func replace(s string, r *regexp.Regexp, f resolve) string {
 	return s
 }
 
+// resolve ${localEnv:VARIABLE_NAME}
 func resolveLocalEnv(s string) string {
 	regexpLocalEnv := regexp.MustCompile(`\${localEnv:([[:word:]]+)}`)
 
@@ -76,8 +82,81 @@ func resolveContainerEnv(e Engine, s string) string {
 	return replace(s, regexpLocalEnv, e.ResolveEnv)
 }
 
+// PRERUN UTILS
+
+func (d *DevContainer) SetLogLevel() {
+	log = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
+
+	switch rootVerbose {
+	case 1:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case 2:
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	default:
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	}
+}
+
+func (d *DevContainer) ParseConfig() {
+	// return JSONC as JSON
+	_, j, err := jsonc.ReadFromFile(".devcontainer/devcontainer.json")
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot read devcontainer settings")
+	}
+
+	if err := json.Unmarshal(j, &d.JSON); err != nil {
+		log.Fatal().Err(err).Msg("cannot parse json")
+	}
+	log.Debug().Str("devcontainer", fmt.Sprintf("%+v", d.JSON)).Send()
+}
+
+func (d *DevContainer) SetDefaults() {
+	// set defaults values for mydevcontainer
+	d.WorkingDirectoryPath, _ = os.Getwd()
+	d.WorkingDirectoryName = filepath.Base(d.WorkingDirectoryPath)
+	d.JSON.Build.Context = lo.Ternary(d.JSON.Build.Context != "", d.JSON.Build.Context, ".")
+	d.JSON.Name = lo.Ternary(d.JSON.Name != "", d.JSON.Name, d.WorkingDirectoryName)
+	d.JSON.OverrideCommand = lo.Ternary(d.JSON.OverrideCommand, d.JSON.OverrideCommand, true)
+	d.JSON.UpdateRemoteUserUID = lo.Ternary(d.JSON.UpdateRemoteUserUID, d.JSON.UpdateRemoteUserUID, true)
+	d.JSON.WorkspaceFolder = lo.Ternary(d.JSON.WorkspaceFolder != "", d.JSON.WorkspaceFolder, "/workspace")
+	d.JSON.WorkspaceMount = lo.Ternary(d.JSON.WorkspaceMount != "", d.JSON.WorkspaceMount, "type=bind,source="+d.WorkingDirectoryPath+",target="+d.JSON.WorkspaceFolder+",consistency=cached")
+}
+
+func (d *DevContainer) CheckConfig() {
+	// check required and conflicting settings
+	if d.JSON.Image == "" && d.JSON.Build.Dockerfile == "" && d.JSON.DockerComposeFile == "" {
+		log.Fatal().Msg("one of these settings is required: 'image', 'build.dockerfile', 'dockerComposeFile'")
+	}
+	if (d.JSON.Image != "" && d.JSON.Build.Dockerfile != "") ||
+		(d.JSON.Image != "" && d.JSON.DockerComposeFile != "") ||
+		(d.JSON.Build.Dockerfile != "" && d.JSON.DockerComposeFile != "") {
+		log.Fatal().Msg("one of these settings conflicts with another one: 'image', 'build.dockerfile', 'dockerComposeFile'")
+	}
+	if d.JSON.DockerComposeFile != "" && d.JSON.Service == "" {
+		log.Fatal().Msg("'service' setting is required when using 'dockerComposeFile'")
+	}
+}
+
+func (d *DevContainer) SetEngine() {
+	// determine container engine
+	switch {
+	case d.JSON.Image != "" || d.JSON.Build.Dockerfile != "":
+		d.Engine = &Docker{}
+	case d.JSON.DockerComposeFile != "":
+		d.Engine = &DockerCompose{}
+	default:
+		log.Fatal().Msg("cannot determine devcontainer engine")
+	}
+
+	// initialize engine
+	if err := d.Engine.Init(d); err != nil {
+		log.Fatal().Err(err).Msg("cannot initialize")
+	}
+	log.Debug().Str("engine", fmt.Sprintf("%+v", d.Engine)).Send()
+}
+
 // https://containers.dev/implementors/json_reference/#variables-in-devcontainerjson
-func (d *DevContainer) resolveVars() {
+func (d *DevContainer) ResolveVars() {
 	// resolve ${localEnv:VARIABLE_NAME}
 	d.JSON.Build.Args = lo.MapValues(d.JSON.Build.Args, func(v string, _ string) string { return resolveLocalEnv(v) })
 	d.JSON.Build.CacheFrom = resolveLocalEnv(d.JSON.Build.CacheFrom)
