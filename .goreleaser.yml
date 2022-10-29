@@ -43,12 +43,12 @@ aurs:
     private_key: "{{ .Env.AUR_KEY }}"
     git_url: "ssh://aur@aur.archlinux.org/devc-bin.git"
     package: |-
-      install -Dm755 "./devc" "${pkgdir}/usr/bin/devc"
-      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/devc/LICENSE"
-      install -Dm644 "./man/devc*.1" "${pkgdir}/usr/share/man/man1/"
-      install -Dm644 "./completions/devc" "${pkgdir}/usr/share/bash-completion/completions/"
-      install -Dm644 "./completions/devc.fish" "${pkgdir}/usr/share/fish/vendor_completions.d/"
-      install -Dm644 "./completions/_devc" "${pkgdir}/usr/share/zsh/site-functions/"
+      install -Dm755 -t "${pkgdir}/usr/bin/devc" "./devc"
+      install -Dm644 -t "${pkgdir}/usr/share/licenses/devc/LICENSE" "./LICENSE"
+      install -Dm644 -t "${pkgdir}/usr/share/man/man1/" ./man/devc*.1
+      install -Dm644 -t "${pkgdir}/usr/share/bash-completion/completions/" "./completions/devc"
+      install -Dm644 -t "${pkgdir}/usr/share/fish/vendor_completions.d/" "./completions/devc.fish"
+      install -Dm644 -t "${pkgdir}/usr/share/zsh/site-functions/" "./completions/_devc"
 
 brews:
   - name: "devc"
