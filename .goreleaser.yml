@@ -42,6 +42,13 @@ aurs:
     license: "GPLv3"
     private_key: "{{ .Env.AUR_KEY }}"
     git_url: "ssh://aur@aur.archlinux.org/devc-bin.git"
+    conflicts:
+      - "devc"
+      - "devc-bin"
+      - "devc-git"
+    optdepends:
+      - "docker: for docker backend"
+      - "docker-compose: for docker-compose backend"
     package: |-
       install -Dm755 -t "${pkgdir}/usr/bin/" "./devc"
       install -Dm644 -t "${pkgdir}/usr/share/licenses/devc/" "./LICENSE"
