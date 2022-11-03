@@ -99,7 +99,7 @@ func (d *DevContainer) SetLogLevel() {
 
 func (d *DevContainer) ParseConfig() {
 	// return JSONC as JSON
-	_, j, err := jsonc.ReadFromFile(".devcontainer/devcontainer.json")
+	_, j, err := jsonc.ReadFromFile(filepath.Join(rootConfigDir, "devcontainer.json"))
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot read devcontainer settings")
 	}
@@ -112,6 +112,7 @@ func (d *DevContainer) ParseConfig() {
 
 func (d *DevContainer) SetDefaults() {
 	// set defaults values for mydevcontainer
+	d.ConfigDir = rootConfigDir
 	d.WorkingDirectoryPath, _ = os.Getwd()
 	d.WorkingDirectoryName = filepath.Base(d.WorkingDirectoryPath)
 	d.JSON.Build.Context = lo.Ternary(d.JSON.Build.Context != "", d.JSON.Build.Context, ".")

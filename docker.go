@@ -35,7 +35,7 @@ type DockerImageBuild struct {
 
 // Init initialize docker settings
 func (d *Docker) Init(config *DevContainer) error {
-	if err := os.Chdir(".devcontainer"); err != nil {
+	if err := os.Chdir(config.ConfigDir); err != nil {
 		return err
 	}
 

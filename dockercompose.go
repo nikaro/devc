@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/samber/lo"
@@ -30,7 +31,7 @@ func (d *DockerCompose) cmd(args ...string) []string {
 // Init initialize compose settings
 func (d *DockerCompose) Init(config *DevContainer) error {
 	d.Envs = lo.MapToSlice(config.JSON.RemoteEnv, func(k string, v string) string { return k + "=" + v })
-	d.File = ".devcontainer/" + config.JSON.DockerComposeFile
+	d.File = filepath.Join(config.ConfigDir, config.JSON.DockerComposeFile)
 	d.ProjectName = config.JSON.Name + "_devcontainer"
 	d.RunServices = config.JSON.RunServices
 	d.Service = config.JSON.Service

@@ -11,6 +11,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -73,6 +74,7 @@ type Engine interface {
 
 // devcontainer meta-structure
 type DevContainer struct {
+	ConfigDir            string
 	Engine               Engine
 	JSON                 DevContainerJSON
 	WorkingDirectoryPath string
@@ -87,6 +89,7 @@ var devc DevContainer
 // DEVC COMMANDS
 
 // cli args
+var rootConfigDir string
 var rootVerbose int
 var initJSON []byte
 var manOutDir string
@@ -95,6 +98,7 @@ var stopRemove bool
 
 func init() {
 	// devc command
+	rootCmd.PersistentFlags().StringVarP(&rootConfigDir, "config-dir", "c", ".devcontainer", "custom devcontainer directory")
 	rootCmd.PersistentFlags().CountVarP(&rootVerbose, "verbose", "v", "enable verbose output")
 	// build sub-command
 	rootCmd.AddCommand(buildCmd)
@@ -195,19 +199,19 @@ func (d *DevContainer) Build(_ *cobra.Command, _ []string) {
 
 func (d *DevContainer) Init(_ *cobra.Command, _ []string) {
 	fs := afero.NewOsFs()
-	if exists, _ := afero.DirExists(fs, ".devcontainer"); !exists {
-		if err := fs.Mkdir(".devcontainer", 0755); err != nil {
-			log.Fatal().Err(err).Msg("cannot create .devcontainer directory")
+	if exists, _ := afero.DirExists(fs, d.ConfigDir); !exists {
+		if err := fs.Mkdir(d.ConfigDir, 0755); err != nil {
+			log.Fatal().Err(err).Msg("cannot create directory")
 		}
-		log.Info().Msg(".devcontainer directory created")
+		log.Info().Msg("directory created")
 	}
-	if exists, _ := afero.Exists(fs, ".devcontainer/devcontainer.json"); !exists {
+	if exists, _ := afero.Exists(fs, filepath.Join(d.ConfigDir, "devcontainer.json")); !exists {
 		d.JSON.Image = "alpine:latest"
 		initJSON, _ = json.MarshalIndent(d.JSON, "", "  ")
-		if err := afero.WriteFile(fs, ".devcontainer/devcontainer.json", initJSON, 0644); err != nil {
-			log.Fatal().Err(err).Msg("cannot write devcontainer.json file")
+		if err := afero.WriteFile(fs, filepath.Join(d.ConfigDir, "devcontainer.json"), initJSON, 0644); err != nil {
+			log.Fatal().Err(err).Msg("cannot write file")
 		}
-		log.Info().Msg("devcontainer.json file created")
+		log.Info().Msg("file created")
 	}
 }
 
