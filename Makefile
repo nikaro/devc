@@ -48,11 +48,11 @@ install:
 	install -d ${MANDIR}/man1
 	install -m 644 $(wildcard man/${APP}*.1) ${MANDIR}/man1/
 	install -d ${SHAREDIR}/bash-completion/completions
-	install -m644 completions/${APP} ${SHAREDIR}/bash-completion/completions/${APP}
+	install -m 644 completions/${APP} ${SHAREDIR}/bash-completion/completions/${APP}
 	install -d ${SHAREDIR}/fish/vendor_completions.d
-	install -m644 completions/${APP}.fish ${SHAREDIR}/fish/vendor_completions.d/${APP}.fish
+	install -m 644 completions/${APP}.fish ${SHAREDIR}/fish/vendor_completions.d/${APP}.fish
 	install -d ${SHAREDIR}/zsh/site-functions
-	install -m644 completions/_${APP} ${SHAREDIR}/zsh/site-functions/_${APP}
+	install -m 644 completions/_${APP} ${SHAREDIR}/zsh/site-functions/_${APP}
 
 .PHONY: uninstall
 ## uninstall: Uninstall the application
