@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/rs/zerolog v1.28.0
-	github.com/samber/lo v1.35.0
+	github.com/samber/lo v1.36.0
 	github.com/spf13/afero v1.9.3
 	github.com/spf13/cobra v1.6.1
 	muzzammil.xyz/jsonc v1.0.0
