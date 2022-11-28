@@ -8,6 +8,7 @@ import (
 )
 
 type Docker struct {
+	_ExecCmd      func([]string, bool) (string, error)
 	Args          []string
 	Command       []string
 	Container     string
@@ -39,6 +40,7 @@ func (d *Docker) Init(config *DevContainer) error {
 		return err
 	}
 
+	d._ExecCmd = lo.Ternary(d._ExecCmd != nil, d._ExecCmd, execCmd)
 	d.Args = config.JSON.RunArgs
 	d.Command = lo.Ternary(config.JSON.OverrideCommand, []string{"/bin/sh", "-c", "while sleep 1000; do :; done"}, nil)
 	d.ContainerUser = config.JSON.ContainerUser
@@ -81,7 +83,7 @@ func (d *Docker) GetContainer() (string, error) {
 	cmdArgs = append(cmdArgs, "--latest")
 	cmdArgs = append(cmdArgs, "--filter", "label=devcontainer.local_folder="+d.Path)
 
-	return execCmd(cmdArgs, true)
+	return d._ExecCmd(cmdArgs, true)
 }
 
 // IsRunning return the container status
@@ -95,7 +97,7 @@ func (d *Docker) IsRunning() (bool, error) {
 	cmdArgs := []string{"docker", "container", "ls"}
 	cmdArgs = append(cmdArgs, "--quiet")
 	cmdArgs = append(cmdArgs, "--filter", "label=devcontainer.local_folder="+d.Path)
-	out, err := execCmd(cmdArgs, true)
+	out, err := d._ExecCmd(cmdArgs, true)
 	if d.Container != "" {
 		running = lo.Contains(strings.Split(out, "\n"), d.Container)
 	}
@@ -124,7 +126,7 @@ func (d *Docker) Build() (string, error) {
 	}
 	cmdArgs = append(cmdArgs, d.ImageBuild.Context)
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Create create the container with the given image
@@ -153,7 +155,7 @@ func (d *Docker) Create() (string, error) {
 		cmdArgs = append(cmdArgs, d.Command...)
 	}
 
-	return execCmd(cmdArgs, true)
+	return d._ExecCmd(cmdArgs, true)
 }
 
 // Start start the given container
@@ -178,7 +180,7 @@ func (d *Docker) Start() (string, error) {
 	cmdArgs = append(cmdArgs, d.Args...)
 	cmdArgs = append(cmdArgs, d.Container)
 
-	return execCmd(cmdArgs, true)
+	return d._ExecCmd(cmdArgs, true)
 }
 
 // Stop stop the given container
@@ -191,7 +193,7 @@ func (d *Docker) Stop() (string, error) {
 	cmdArgs := []string{"docker", "container", "stop"}
 	cmdArgs = append(cmdArgs, d.Container)
 
-	return execCmd(cmdArgs, true)
+	return d._ExecCmd(cmdArgs, true)
 }
 
 // Remove remove the container
@@ -203,14 +205,14 @@ func (d *Docker) Remove() (string, error) {
 	cmdArgs := []string{"docker", "container", "rm"}
 	cmdArgs = append(cmdArgs, d.Container)
 
-	return execCmd(cmdArgs, true)
+	return d._ExecCmd(cmdArgs, true)
 }
 
 // List return the list of containers based on the given path
 func (d *Docker) List() (string, error) {
 	cmdArgs := []string{"docker", "container", "ls", "--filter", "label=devcontainer.local_folder=" + d.Path}
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Exec execute the given command into the given container
@@ -238,7 +240,7 @@ func (d *Docker) Exec(command []string, withEnv bool, capture bool) (string, err
 	cmdArgs = append(cmdArgs, d.Container)
 	cmdArgs = append(cmdArgs, command...)
 
-	return execCmd(cmdArgs, capture)
+	return d._ExecCmd(cmdArgs, capture)
 }
 
 // ResolveEnv resolve environment variable from inside the container

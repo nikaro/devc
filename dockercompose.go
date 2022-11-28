@@ -9,6 +9,7 @@ import (
 
 // DockerCompose type
 type DockerCompose struct {
+	_ExecCmd    func([]string, bool) (string, error)
 	Command     []string
 	Containers  []string
 	Envs        []string
@@ -30,6 +31,7 @@ func (d *DockerCompose) cmd(args ...string) []string {
 
 // Init initialize compose settings
 func (d *DockerCompose) Init(config *DevContainer) error {
+	d._ExecCmd = lo.Ternary(d._ExecCmd != nil, d._ExecCmd, execCmd)
 	d.Envs = lo.MapToSlice(config.JSON.RemoteEnv, func(k string, v string) string { return k + "=" + v })
 	d.File = filepath.Join(config.ConfigDir, config.JSON.DockerComposeFile)
 	d.ProjectName = config.JSON.Name + "_devcontainer"
@@ -52,7 +54,7 @@ func (d *DockerCompose) Init(config *DevContainer) error {
 func (d *DockerCompose) IsRunning() (bool, error) {
 	cmdArgs := d.cmd("ps")
 	cmdArgs = append(cmdArgs, "--quiet")
-	out, err := execCmd(cmdArgs, true)
+	out, err := d._ExecCmd(cmdArgs, true)
 	containers := lo.Filter(strings.Split(out, "\n"), func(x string, _ int) bool { return x != "" })
 	running := len(containers) > 0
 
@@ -66,7 +68,7 @@ func (d *DockerCompose) Build() (string, error) {
 		cmdArgs = append(cmdArgs, d.RunServices...)
 	}
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Create create the container with the given image
@@ -76,7 +78,7 @@ func (d *DockerCompose) Create() (string, error) {
 		cmdArgs = append(cmdArgs, d.RunServices...)
 	}
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Start start the given container
@@ -86,7 +88,7 @@ func (d *DockerCompose) Start() (string, error) {
 		cmdArgs = append(cmdArgs, d.RunServices...)
 	}
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Stop stop the given container
@@ -96,21 +98,21 @@ func (d *DockerCompose) Stop() (string, error) {
 		cmdArgs = append(cmdArgs, d.RunServices...)
 	}
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Remove remove the given container
 func (d *DockerCompose) Remove() (string, error) {
 	cmdArgs := d.cmd("down", "--volumes")
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // List return the list of containers based on the given path
 func (d *DockerCompose) List() (string, error) {
 	cmdArgs := d.cmd("ls")
 
-	return execCmd(cmdArgs, false)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // Exec execute the given command into the given container
@@ -137,7 +139,7 @@ func (d *DockerCompose) Exec(command []string, withEnv bool, capture bool) (stri
 	cmdArgs = append(cmdArgs, d.Service)
 	cmdArgs = append(cmdArgs, command...)
 
-	return execCmd(cmdArgs, capture)
+	return d._ExecCmd(cmdArgs, capture)
 }
 
 // ResolveEnv resolve environment variable from inside the container
