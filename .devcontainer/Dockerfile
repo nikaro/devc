@@ -5,7 +5,7 @@ RUN \
         build-base \
         git \
         go \
-        neovim \
+        helix \
     && \
     :
 
