@@ -3,9 +3,7 @@
     "dockerfile": "Dockerfile"
   },
   "mounts": [
-    "type=bind,source=${localEnv:HOME}/.config/nvim/init.lua,destination=/root/.config/nvim/init.lua",
-    "type=bind,source=${localEnv:HOME}/.config/nvim/lua,destination=/root/.config/nvim/lua",
-    "type=bind,source=${localEnv:HOME}/.config/nvim/after,destination=/root/.config/nvim/after"
+    "type=bind,source=${localEnv:HOME}/.config/helix,destination=/root/.config/helix"
   ],
   "remoteEnv": {
     "PATH": "${containerEnv:HOME}/go/bin:${containerEnv:PATH}"

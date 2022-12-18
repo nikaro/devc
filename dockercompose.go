@@ -13,7 +13,7 @@ type DockerCompose struct {
 	Command     []string
 	Containers  []string
 	Envs        []string
-	File        string
+	Files       []string
 	ProjectName string
 	Running     bool
 	RunServices []string
@@ -23,22 +23,31 @@ type DockerCompose struct {
 }
 
 func (d *DockerCompose) cmd(args ...string) []string {
-	cmd := []string{"docker", "compose", "--file", d.File, "--project-name", d.ProjectName}
+	cmd := []string{"docker", "compose", "--project-name", d.ProjectName}
+	for _, file := range d.Files {
+		cmd = append(cmd, "--file", file)
+	}
 	cmd = append(cmd, args...)
 
 	return cmd
 }
 
 // Init initialize compose settings
-func (d *DockerCompose) Init(config *DevContainer) error {
+func (d *DockerCompose) Init(c *DevContainer) error {
 	d._ExecCmd = lo.Ternary(d._ExecCmd != nil, d._ExecCmd, execCmd)
-	d.Envs = lo.MapToSlice(config.JSON.RemoteEnv, func(k string, v string) string { return k + "=" + v })
-	d.File = filepath.Join(config.ConfigDir, config.JSON.DockerComposeFile)
-	d.ProjectName = config.JSON.Name + "_devcontainer"
-	d.RunServices = config.JSON.RunServices
-	d.Service = config.JSON.Service
-	d.User = config.JSON.RemoteUser
-	d.WorkDir = config.JSON.WorkspaceFolder
+	d.Envs = lo.MapToSlice(
+		c.Config.GetStringMapString("remoteEnv"),
+		func(k string, v string) string { return k + "=" + v },
+	)
+	d.Files = lo.Map(
+		c.Config.GetStringSlice("dockerComposeFile"),
+		func(v string, _ int) string { return filepath.Join(c.ConfigDir, v) },
+	)
+	d.ProjectName = c.Config.GetString("name") + "_devcontainer"
+	d.RunServices = c.Config.GetStringSlice("runServices")
+	d.Service = c.Config.GetString("service")
+	d.User = c.Config.GetString("remoteUser")
+	d.WorkDir = c.Config.GetString("workspaceFolder")
 
 	// check if already started
 	if running, err := d.IsRunning(); err != nil {
@@ -144,7 +153,7 @@ func (d *DockerCompose) Exec(command []string, withEnv bool, capture bool) (stri
 
 // ResolveEnv resolve environment variable from inside the container
 func (d *DockerCompose) ResolveEnv(env string) string {
-	cmd := []string{"sh", "-c", "env | awk -F'=' '/" + env + "=/ {print $2}'"}
+	cmd := []string{"echo", "$" + env}
 	resolved, err := d.Exec(cmd, false, true)
 	if err != nil {
 		panic(err)

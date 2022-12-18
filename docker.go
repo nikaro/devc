@@ -8,56 +8,80 @@ import (
 )
 
 type Docker struct {
-	_ExecCmd      func([]string, bool) (string, error)
-	Args          []string
-	Command       []string
-	Container     string
-	ContainerUser string
-	Envs          []string
-	Image         string
-	ImageBuild    DockerImageBuild
-	Mounts        []string
-	Path          string
-	Ports         []string
-	RemoteEnvs    []string
-	RemoteUser    string
-	Running       bool
-	WorkDir       string
+	_ExecCmd        func([]string, bool) (string, error)
+	Args            []string
+	Capabilities    []string
+	Command         []string
+	Container       string
+	ContainerUser   string
+	EnableInit      bool
+	EnablePrivilege bool
+	Envs            []string
+	Image           string
+	ImageBuild      DockerImageBuild
+	Mounts          []string
+	Path            string
+	Ports           []string
+	RemoteEnvs      []string
+	RemoteUser      string
+	Running         bool
+	SecurityOpts    []string
+	WorkDir         string
 }
 
 type DockerImageBuild struct {
 	Args       []string
 	Dockerfile string
-	CacheFrom  string
+	CacheFrom  []string
 	Context    string
 	Tag        string
 	Target     string
 }
 
 // Init initialize docker settings
-func (d *Docker) Init(config *DevContainer) error {
-	if err := os.Chdir(config.ConfigDir); err != nil {
+func (d *Docker) Init(c *DevContainer) error {
+	if err := os.Chdir(c.ConfigDir); err != nil {
 		return err
 	}
 
 	d._ExecCmd = lo.Ternary(d._ExecCmd != nil, d._ExecCmd, execCmd)
-	d.Args = config.JSON.RunArgs
-	d.Command = lo.Ternary(config.JSON.OverrideCommand, []string{"/bin/sh", "-c", "while sleep 1000; do :; done"}, nil)
-	d.ContainerUser = config.JSON.ContainerUser
-	d.Envs = lo.MapToSlice(config.JSON.ContainerEnv, func(k string, v string) string { return k + "=" + v })
-	d.Image = lo.Ternary(config.JSON.Image != "", config.JSON.Image, "vsc-"+config.WorkingDirectoryName+"-"+md5sum(config.WorkingDirectoryPath))
-	d.ImageBuild.Args = lo.MapToSlice(config.JSON.Build.Args, func(k string, v string) string { return k + "=" + v })
-	d.ImageBuild.CacheFrom = config.JSON.Build.CacheFrom
-	d.ImageBuild.Context = config.JSON.Build.Context
-	d.ImageBuild.Dockerfile = config.JSON.Build.Dockerfile
-	d.ImageBuild.Target = config.JSON.Build.Target
-	d.Mounts = config.JSON.Mounts
-	d.Mounts = append(d.Mounts, config.JSON.WorkspaceMount)
-	d.Path = config.WorkingDirectoryPath
-	d.Ports = config.JSON.ForwardPorts
-	d.RemoteEnvs = lo.MapToSlice(config.JSON.RemoteEnv, func(k string, v string) string { return k + "=" + v })
-	d.RemoteUser = config.JSON.RemoteUser
-	d.WorkDir = config.JSON.WorkspaceFolder
+	d.Args = c.Config.GetStringSlice("runArgs")
+	d.Capabilities = c.Config.GetStringSlice("capAdd")
+	d.Command = lo.Ternary(
+		c.Config.GetBool("overrideCommand"),
+		[]string{"/bin/sh", "-c", "while sleep 1000; do :; done"},
+		nil,
+	)
+	d.ContainerUser = c.Config.GetString("containerUser")
+	d.EnableInit = c.Config.GetBool("init")
+	d.EnablePrivilege = c.Config.GetBool("privileged")
+	d.Envs = lo.MapToSlice(
+		c.Config.GetStringMapString("containerEnv"),
+		func(k string, v string) string { return k + "=" + v },
+	)
+	d.Image = lo.Ternary(
+		c.Config.IsSet("image"),
+		c.Config.GetString("image"),
+		"vsc-"+c.WorkingDirectoryName+"-"+md5sum(c.WorkingDirectoryPath),
+	)
+	d.ImageBuild.Args = lo.MapToSlice(
+		c.Config.GetStringMapString("build.args"),
+		func(k string, v string) string { return k + "=" + v },
+	)
+	d.ImageBuild.CacheFrom = c.Config.GetStringSlice("build.cacheFrom")
+	d.ImageBuild.Context = c.Config.GetString("build.context")
+	d.ImageBuild.Dockerfile = c.Config.GetString("build.dockerfile")
+	d.ImageBuild.Target = c.Config.GetString("build.target")
+	d.Mounts = c.Config.GetStringSlice("mounts")
+	d.Mounts = append(d.Mounts, c.Config.GetString("workspaceMount"))
+	d.Path = c.WorkingDirectoryPath
+	d.Ports = c.Config.GetStringSlice("forwardPorts")
+	d.RemoteEnvs = lo.MapToSlice(
+		c.Config.GetStringMapString("remoteEnv"),
+		func(k string, v string) string { return k + "=" + v },
+	)
+	d.RemoteUser = c.Config.GetString("remoteUser")
+	d.WorkDir = c.Config.GetString("workspaceFolder")
 
 	// check if already created
 	if container, err := d.GetContainer(); err != nil {
@@ -118,8 +142,8 @@ func (d *Docker) Build() (string, error) {
 	if d.ImageBuild.Target != "" {
 		cmdArgs = append(cmdArgs, "--target", d.ImageBuild.Target)
 	}
-	if d.ImageBuild.CacheFrom != "" {
-		cmdArgs = append(cmdArgs, "--cache-from", d.ImageBuild.CacheFrom)
+	for _, cache := range d.ImageBuild.CacheFrom {
+		cmdArgs = append(cmdArgs, "--cache-from", cache)
 	}
 	for _, arg := range d.ImageBuild.Args {
 		cmdArgs = append(cmdArgs, "--build-arg", arg)
@@ -138,6 +162,15 @@ func (d *Docker) Create() (string, error) {
 
 	cmdArgs := []string{"docker", "container", "create"}
 	cmdArgs = append(cmdArgs, "--label", "devcontainer.local_folder="+d.Path)
+	if d.EnableInit {
+		cmdArgs = append(cmdArgs, "--init")
+	}
+	for _, cap := range d.Capabilities {
+		cmdArgs = append(cmdArgs, "--cap-add", cap)
+	}
+	for _, sec := range d.SecurityOpts {
+		cmdArgs = append(cmdArgs, "--security-opt", sec)
+	}
 	for _, mount := range d.Mounts {
 		cmdArgs = append(cmdArgs, "--mount", mount)
 	}
@@ -245,7 +278,7 @@ func (d *Docker) Exec(command []string, withEnv bool, capture bool) (string, err
 
 // ResolveEnv resolve environment variable from inside the container
 func (d *Docker) ResolveEnv(env string) string {
-	cmd := []string{"sh", "-c", "env | awk -F'=' '/" + env + "=/ {print $2}'"}
+	cmd := []string{"echo", "$" + env}
 	resolved, err := d.Exec(cmd, false, true)
 	if err != nil {
 		panic(err)

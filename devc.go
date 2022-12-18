@@ -9,54 +9,19 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/samber/lo"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+	"github.com/spf13/viper"
 )
 
 // global log var
 var log zerolog.Logger
-
-// devcontainer.json structure
-type DevContainerJSON struct {
-	Build               DevContainerJSONBuild `json:"build,omitempty"`
-	ContainerEnv        map[string]string     `json:"containerEnv,omitempty"`
-	ContainerUser       string                `json:"containerUser,omitempty"`
-	Customizations      map[string]any        `json:"customizations,omitempty"`
-	DockerComposeFile   string                `json:"dockerComposeFile,omitempty"`
-	ForwardPorts        []string              `json:"forwardPorts,omitempty"`
-	Image               string                `json:"image,omitempty"`
-	InitializeCommand   []string              `json:"initializeCommand,omitempty"`
-	Mounts              []string              `json:"mounts,omitempty"`
-	Name                string                `json:"name,omitempty"`
-	OnCreateCommand     []string              `json:"onCreateCommand,omitempty"`
-	OverrideCommand     bool                  `json:"overrideCommand,omitempty"`
-	PostAttachCommand   []string              `json:"postAttachCommand,omitempty"`
-	PostCreateCommand   []string              `json:"postCreateCommand,omitempty"`
-	PostStartCommand    []string              `json:"postStartCommand,omitempty"`
-	RemoteEnv           map[string]string     `json:"remoteEnv,omitempty"`
-	RemoteUser          string                `json:"remoteUser,omitempty"`
-	RunArgs             []string              `json:"runArgs,omitempty"`
-	RunServices         []string              `json:"runServices,omitempty"`
-	Service             string                `json:"service,omitempty"`
-	UpdateRemoteUserUID bool                  `json:"updateRemoteUserUID,omitempty"`
-	WorkspaceFolder     string                `json:"workspaceFolder,omitempty"`
-	WorkspaceMount      string                `json:"workspaceMount,omitempty"`
-}
-type DevContainerJSONBuild struct {
-	Args       map[string]string `json:"args,omitempty"`
-	CacheFrom  string            `json:"cacheFrom,omitempty"`
-	Context    string            `json:"context,omitempty"`
-	Dockerfile string            `json:"dockerfile,omitempty"`
-	Target     string            `json:"target,omitempty"`
-}
 
 // interface that each engine (docker, compose, podman, k8s, etc.) must implement
 type Engine interface {
@@ -75,8 +40,8 @@ type Engine interface {
 // devcontainer meta-structure
 type DevContainer struct {
 	ConfigDir            string
+	Config               *viper.Viper
 	Engine               Engine
-	JSON                 DevContainerJSON
 	WorkingDirectoryPath string
 	WorkingDirectoryName string
 }
@@ -91,7 +56,6 @@ var devc DevContainer
 // cli args
 var rootConfigDir string
 var rootVerbose int
-var initJSON []byte
 var manOutDir string
 var shellBin string
 var stopRemove bool
@@ -176,6 +140,8 @@ func (d *DevContainer) PreRun(_ *cobra.Command, _ []string) {
 	d.SetLogLevel()
 	if lo.None([]string{"completion", "init", "man", "-h", "--help", "help"}, os.Args) {
 		d.ParseConfig()
+		d.SetAliases()
+		d.NormalizeTypes()
 		d.SetDefaults()
 		d.CheckConfig()
 		d.InitializeCommand()
@@ -198,21 +164,15 @@ func (d *DevContainer) Build(_ *cobra.Command, _ []string) {
 }
 
 func (d *DevContainer) Init(_ *cobra.Command, _ []string) {
-	fs := afero.NewOsFs()
-	if exists, _ := afero.DirExists(fs, d.ConfigDir); !exists {
-		if err := fs.Mkdir(d.ConfigDir, 0755); err != nil {
-			log.Fatal().Err(err).Msg("cannot create directory")
-		}
-		log.Info().Msg("directory created")
+	if err := os.Mkdir(d.ConfigDir, 0755); err != nil {
+		log.Fatal().Err(err).Msg("cannot create directory")
 	}
-	if exists, _ := afero.Exists(fs, filepath.Join(d.ConfigDir, "devcontainer.json")); !exists {
-		d.JSON.Image = "alpine:latest"
-		initJSON, _ = json.MarshalIndent(d.JSON, "", "  ")
-		if err := afero.WriteFile(fs, filepath.Join(d.ConfigDir, "devcontainer.json"), initJSON, 0644); err != nil {
-			log.Fatal().Err(err).Msg("cannot write file")
-		}
-		log.Info().Msg("file created")
+	log.Info().Msg("directory created")
+	d.Config.Set("image", "alpine:latest")
+	if err := d.Config.SafeWriteConfigAs(filepath.Join(d.ConfigDir, "devcontainer.json")); err != nil {
+		log.Fatal().Err(err).Msg("cannot write file")
 	}
+	log.Info().Msg("file created")
 }
 
 func (d *DevContainer) List(_ *cobra.Command, _ []string) {
@@ -261,42 +221,47 @@ func (d *DevContainer) Stop(_ *cobra.Command, _ []string) {
 // INIT/POST/ON STEPS
 
 func (d *DevContainer) InitializeCommand() {
-	if len(devc.JSON.InitializeCommand) > 0 {
-		if _, err := execCmd(devc.JSON.InitializeCommand, false); err != nil {
+	initializeCommand := devc.Config.GetStringSlice("initializeCommand")
+	if len(initializeCommand) > 0 {
+		if _, err := execCmd(initializeCommand, false); err != nil {
 			log.Fatal().Err(err).Msg("cannot run initializeCommand")
 		}
 	}
 }
 
 func (d *DevContainer) OnCreateCommand() {
-	if len(d.JSON.OnCreateCommand) > 0 {
-		if _, err := d.Engine.Exec(d.JSON.OnCreateCommand, true, false); err != nil {
+	onCreateCommand := d.Config.GetStringSlice("onCreateCommand")
+	if len(onCreateCommand) > 0 {
+		if _, err := d.Engine.Exec(onCreateCommand, true, false); err != nil {
 			log.Fatal().Err(err).Msg("cannot execute onCreateCommand")
 		}
 	}
 }
 
 func (d *DevContainer) PostCreateCommand() {
-	if len(d.JSON.PostCreateCommand) > 0 {
-		if _, err := d.Engine.Exec(d.JSON.PostCreateCommand, true, false); err != nil {
+	postCreateCommand := d.Config.GetStringSlice("postCreateCommand")
+	if len(postCreateCommand) > 0 {
+		if _, err := d.Engine.Exec(postCreateCommand, true, false); err != nil {
 			log.Fatal().Err(err).Msg("cannot execute postCreateCommand")
 		}
 	}
 }
 
 func (d *DevContainer) PostAttachCommand() {
-	if len(devc.JSON.PostAttachCommand) > 0 {
+	postAttachCommand := d.Config.GetStringSlice("postAttachCommand")
+	if len(postAttachCommand) > 0 {
 		// wait a bit to ensure shell is started
 		time.Sleep(1 * time.Second)
-		if _, err := devc.Engine.Exec(devc.JSON.PostAttachCommand, true, false); err != nil {
+		if _, err := devc.Engine.Exec(postAttachCommand, true, false); err != nil {
 			log.Fatal().Err(err).Msg("cannot execute postAttachCommand")
 		}
 	}
 }
 
 func (d *DevContainer) PostStartCommand() {
-	if len(devc.JSON.PostStartCommand) > 0 {
-		if _, err := devc.Engine.Exec(devc.JSON.PostStartCommand, true, false); err != nil {
+	postStartCommand := devc.Config.GetStringSlice("postStartCommand")
+	if len(postStartCommand) > 0 {
+		if _, err := devc.Engine.Exec(postStartCommand, true, false); err != nil {
 			log.Fatal().Err(err).Msg("cannot execute postStartCommand")
 		}
 	}
