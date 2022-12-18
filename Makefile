@@ -13,35 +13,30 @@ VERSION = $(shell git describe --always --dirty)
 all: build
 
 .PHONY: setup
-## setup: Setup go modules
-setup:
+setup: ## Setup go modules
 	go get -u all
 	go mod tidy
 	go mod vendor
 
 .PHONY: build
-## build: Build for the current target
-build:
+build: ## Build for the current target
 	@echo "Building..."
 	env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -mod vendor -ldflags="-s -w -X 'main.version=${VERSION}'" -o build/${APP}-${GOOS}-${GOARCH} .
 
 .PHONY: man
-## man: Build manpage
-man:
+man: ## Build manpage
 	@echo "Building manpages..."
 	build/${APP}-${GOOS}-${GOARCH} man
 
 .PHONY: completion
-## man: Build completions
-completion:
+completion: ## Build completions
 	@echo "Building completions..."
 	build/${APP}-${GOOS}-${GOARCH} completion bash > completions/${APP}
 	build/${APP}-${GOOS}-${GOARCH} completion fish > completions/${APP}.fish
 	build/${APP}-${GOOS}-${GOARCH} completion zsh > completions/_${APP}
 
 .PHONY: install
-## install: Install the application
-install:
+install: ## Install the application
 	@echo "Installing..."
 	install -d ${BINDIR}
 	install -m 755 build/${APP}-${GOOS}-${GOARCH} ${BINDIR}/${APP}
@@ -55,8 +50,7 @@ install:
 	install -m 644 completions/_${APP} ${SHAREDIR}/zsh/site-functions/_${APP}
 
 .PHONY: uninstall
-## uninstall: Uninstall the application
-uninstall:
+uninstall: ## Uninstall the application
 	@echo "Uninstalling..."
 	rm -f ${BINDIR}/${APP}
 	rm -f $(wildcard ${MANDIR}/man1/${APP}*.1)
@@ -75,37 +69,30 @@ uninstall:
 	-rmdir ${SHAREDIR}/zsh
 
 .PHONY: format
-## format: Runs goimports on the project
-format:
+format: ## Runs goimports on the project
 	@echo "Formatting..."
 	find . -type f -name '*.go' -not -path './vendor/*' | xargs goimports -l -w
 
 .PHONY: lint
-## lint: Run linters
-lint:
+lint: ## Run linters
 	@echo "Linting..."
 	golangci-lint run
 
 .PHONY: test
-## test: Runs go test
-test:
+test: ## Runs go test
 	@echo "Testing..."
 	go test ./...
 
 .PHONY: run
-## run: Runs go run
-run:
+run: ## Runs go run
 	go run -race ${APP}.go
 
 .PHONY: clean
-## clean: Cleans the binary
-clean:
+clean: ## Cleans the binary
 	@echo "Cleaning..."
 	@rm -rf build/
 	@rm -rf dist/
 
 .PHONY: help
-## help: Prints this help message
-help:
-	@echo -e "Usage: \n"
-	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
+help: ## Print this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
