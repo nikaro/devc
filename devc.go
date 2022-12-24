@@ -26,6 +26,8 @@ var log zerolog.Logger
 // interface that each engine (docker, compose, podman, k8s, etc.) must implement
 type Engine interface {
 	Init(config *DevContainer) error
+	IsBuilt() (bool, error)
+	IsCreated() (bool, error)
 	IsRunning() (bool, error)
 	Build() (string, error)
 	Create() (string, error)
@@ -33,7 +35,8 @@ type Engine interface {
 	Start() (string, error)
 	Stop() (string, error)
 	List() (string, error)
-	Exec(command []string, withEnv bool, capture bool) (string, error)
+	Run(command []string) (string, error)
+	Exec(command []string) (string, error)
 	ResolveEnv(env string) string
 }
 
@@ -150,17 +153,12 @@ func (d *DevContainer) PreRun(_ *cobra.Command, _ []string) {
 	}
 }
 
-func (d *DevContainer) Build(_ *cobra.Command, _ []string) {
-	if _, err := d.Engine.Build(); err != nil {
-		log.Fatal().Err(err).Msg("cannot build")
+func (d *DevContainer) Build(cmd *cobra.Command, args []string) {
+	if built, _ := d.Engine.IsBuilt(); !built {
+		if _, err := d.Engine.Build(); err != nil {
+			log.Fatal().Err(err).Msg("cannot build")
+		}
 	}
-	if _, err := d.Engine.Create(); err != nil {
-		log.Fatal().Err(err).Msg("cannot create")
-	}
-	d.OnCreateCommand()
-	// TODO: figure out what updateContentCommand does and add it
-	// go d.UpdateContent()
-	d.PostCreateCommand()
 }
 
 func (d *DevContainer) Init(_ *cobra.Command, _ []string) {
@@ -191,29 +189,47 @@ func (d *DevContainer) Man(_ *cobra.Command, _ []string) {
 }
 
 func (d *DevContainer) Shell(cmd *cobra.Command, args []string) {
-	// ensure it is started before starting a shell
+	// ensure container is started before starting a shell
 	d.Start(cmd, args)
-	// run asynchronously to avoid blocking shell start
+	// run post command asynchronously to avoid blocking shell start
 	go d.PostAttachCommand()
-	if _, err := d.Engine.Exec([]string{shellBin}, true, false); err != nil {
+	if _, err := d.Engine.Exec([]string{shellBin}); err != nil {
 		log.Fatal().Err(err).Msg("cannot execute a shell")
 	}
 }
 
-func (d *DevContainer) Start(_ *cobra.Command, _ []string) {
-	if _, err := d.Engine.Start(); err != nil {
-		log.Fatal().Err(err).Msg("cannot start")
+func (d *DevContainer) Start(cmd *cobra.Command, args []string) {
+	created, _ := d.Engine.IsCreated()
+	if !created {
+		if _, err := d.Engine.Create(); err != nil {
+			log.Fatal().Err(err).Msg("cannot create")
+		}
 	}
-	d.PostStartCommand()
+	if running, _ := d.Engine.IsRunning(); !running {
+		if _, err := d.Engine.Start(); err != nil {
+			log.Fatal().Err(err).Msg("cannot start")
+		}
+		if !created {
+			d.OnCreateCommand()
+			// TODO: figure out what updateContentCommand does and add it
+			// go d.UpdateContent()
+			d.PostCreateCommand()
+		}
+		d.PostStartCommand()
+	}
 }
 
 func (d *DevContainer) Stop(_ *cobra.Command, _ []string) {
-	if _, err := d.Engine.Stop(); err != nil {
-		log.Fatal().Err(err).Msg("cannot stop")
-	}
-	if stopRemove {
-		if _, err := d.Engine.Remove(); err != nil {
-			log.Fatal().Err(err).Msg("cannot remove")
+	if created, _ := d.Engine.IsCreated(); created {
+		if running, _ := d.Engine.IsRunning(); running {
+			if _, err := d.Engine.Stop(); err != nil {
+				log.Fatal().Err(err).Msg("cannot stop")
+			}
+		}
+		if stopRemove {
+			if _, err := d.Engine.Remove(); err != nil {
+				log.Fatal().Err(err).Msg("cannot remove")
+			}
 		}
 	}
 }
@@ -221,50 +237,55 @@ func (d *DevContainer) Stop(_ *cobra.Command, _ []string) {
 // INIT/POST/ON STEPS
 
 func (d *DevContainer) InitializeCommand() {
-	initializeCommand := devc.Config.GetStringSlice("initializeCommand")
-	if len(initializeCommand) > 0 {
-		if _, err := execCmd(initializeCommand, false); err != nil {
-			log.Fatal().Err(err).Msg("cannot run initializeCommand")
+	var cmd []string
+	switch d.Config.Get("initializeCommand").(type) {
+	case string:
+		cmd = []string{"sh", "-c", d.Config.GetString("initializeCommand")}
+	case []interface{}:
+		cmd = d.Config.GetStringSlice("initializeCommand")
+	}
+	if len(cmd) > 0 {
+		// execute on the host
+		if _, err := execCmd(cmd, false); err != nil {
+			log.Fatal().Err(err).Msgf("cannot run %s", "initializeCommand")
+		}
+	}
+}
+
+func (d *DevContainer) cmd(step string, wait bool) {
+	var cmd []string
+	switch d.Config.Get(step).(type) {
+	case string:
+		cmd = []string{"sh", "-c", d.Config.GetString(step)}
+	case []interface{}:
+		cmd = d.Config.GetStringSlice(step)
+	}
+	if len(cmd) > 0 {
+		// wait a bit to ensure shell is started
+		if wait {
+			time.Sleep(1 * time.Second)
+		}
+		// execute inside the container
+		if _, err := d.Engine.Exec(cmd); err != nil {
+			log.Fatal().Err(err).Msgf("cannot run %s", step)
 		}
 	}
 }
 
 func (d *DevContainer) OnCreateCommand() {
-	onCreateCommand := d.Config.GetStringSlice("onCreateCommand")
-	if len(onCreateCommand) > 0 {
-		if _, err := d.Engine.Exec(onCreateCommand, true, false); err != nil {
-			log.Fatal().Err(err).Msg("cannot execute onCreateCommand")
-		}
-	}
+	d.cmd("onCreateCommand", false)
 }
 
 func (d *DevContainer) PostCreateCommand() {
-	postCreateCommand := d.Config.GetStringSlice("postCreateCommand")
-	if len(postCreateCommand) > 0 {
-		if _, err := d.Engine.Exec(postCreateCommand, true, false); err != nil {
-			log.Fatal().Err(err).Msg("cannot execute postCreateCommand")
-		}
-	}
+	d.cmd("postCreateCommand", false)
 }
 
 func (d *DevContainer) PostAttachCommand() {
-	postAttachCommand := d.Config.GetStringSlice("postAttachCommand")
-	if len(postAttachCommand) > 0 {
-		// wait a bit to ensure shell is started
-		time.Sleep(1 * time.Second)
-		if _, err := devc.Engine.Exec(postAttachCommand, true, false); err != nil {
-			log.Fatal().Err(err).Msg("cannot execute postAttachCommand")
-		}
-	}
+	d.cmd("postAttachCommand", true)
 }
 
 func (d *DevContainer) PostStartCommand() {
-	postStartCommand := devc.Config.GetStringSlice("postStartCommand")
-	if len(postStartCommand) > 0 {
-		if _, err := devc.Engine.Exec(postStartCommand, true, false); err != nil {
-			log.Fatal().Err(err).Msg("cannot execute postStartCommand")
-		}
-	}
+	d.cmd("postStartCommand", false)
 }
 
 // MAIN
