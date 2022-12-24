@@ -12,7 +12,6 @@ type Docker struct {
 	Args            []string
 	Capabilities    []string
 	Command         []string
-	Container       string
 	ContainerUser   string
 	EnableInit      bool
 	EnablePrivilege bool
@@ -83,13 +82,6 @@ func (d *Docker) Init(c *DevContainer) error {
 	d.RemoteUser = c.Config.GetString("remoteUser")
 	d.WorkDir = c.Config.GetString("workspaceFolder")
 
-	// check if already created
-	if container, err := d.GetContainer(); err != nil {
-		return err
-	} else if container != "" {
-		d.Container = strings.TrimSpace(container)
-	}
-
 	// check if already started
 	if running, err := d.IsRunning(); err != nil {
 		return err
@@ -100,31 +92,44 @@ func (d *Docker) Init(c *DevContainer) error {
 	return nil
 }
 
+// IsBuilt return the image build status
+func (d *Docker) IsBuilt() (bool, error) {
+	cmdArgs := []string{"docker", "image", "ls"}
+	cmdArgs = append(cmdArgs, "--quiet")
+	cmdArgs = append(cmdArgs, "--format", "{{ .Repository }}")
+	cmdArgs = append(cmdArgs, d.Image)
+	out, err := d._ExecCmd(cmdArgs, true)
+	built := strings.TrimSpace(out) == d.Image
+
+	return built, err
+}
+
 // GetContainer return the container name
-func (d *Docker) GetContainer() (string, error) {
+func (d *Docker) GetContainer(args ...string) (string, error) {
 	cmdArgs := []string{"docker", "container", "ls"}
 	cmdArgs = append(cmdArgs, "--quiet")
 	cmdArgs = append(cmdArgs, "--latest")
 	cmdArgs = append(cmdArgs, "--filter", "label=devcontainer.local_folder="+d.Path)
+	cmdArgs = append(cmdArgs, "--filter", "ancestor="+d.Image)
+	cmdArgs = append(cmdArgs, args...)
 
 	return d._ExecCmd(cmdArgs, true)
 }
 
-// IsRunning return the container status
-func (d *Docker) IsRunning() (bool, error) {
-	// skip if container does not exist
-	if d.Container == "" {
-		return false, nil
-	}
+// IsCreated return the container creation status
+func (d *Docker) IsCreated() (bool, error) {
+	out, err := d.GetContainer()
+	containers := lo.Filter(strings.Split(out, "\n"), func(x string, _ int) bool { return x != "" })
+	created := len(containers) > 0
 
-	running := false
-	cmdArgs := []string{"docker", "container", "ls"}
-	cmdArgs = append(cmdArgs, "--quiet")
-	cmdArgs = append(cmdArgs, "--filter", "label=devcontainer.local_folder="+d.Path)
-	out, err := d._ExecCmd(cmdArgs, true)
-	if d.Container != "" {
-		running = lo.Contains(strings.Split(out, "\n"), d.Container)
-	}
+	return created, err
+}
+
+// IsRunning return the container running status
+func (d *Docker) IsRunning() (bool, error) {
+	out, err := d.GetContainer("--filter", "status=running")
+	containers := lo.Filter(strings.Split(out, "\n"), func(x string, _ int) bool { return x != "" })
+	running := len(containers) > 0
 
 	return running, err
 }
@@ -153,15 +158,7 @@ func (d *Docker) Build() (string, error) {
 	return d._ExecCmd(cmdArgs, false)
 }
 
-// Create create the container with the given image
-func (d *Docker) Create() (string, error) {
-	// skip if container already exists
-	if d.Container != "" {
-		return "", nil
-	}
-
-	cmdArgs := []string{"docker", "container", "create"}
-	cmdArgs = append(cmdArgs, "--label", "devcontainer.local_folder="+d.Path)
+func (d *Docker) createArgs() (cmdArgs []string) {
 	if d.EnableInit {
 		cmdArgs = append(cmdArgs, "--init")
 	}
@@ -184,6 +181,15 @@ func (d *Docker) Create() (string, error) {
 		cmdArgs = append(cmdArgs, "--user", d.ContainerUser)
 	}
 	cmdArgs = append(cmdArgs, d.Image)
+
+	return cmdArgs
+}
+
+// Create create the container with the given image
+func (d *Docker) Create() (string, error) {
+	cmdArgs := []string{"docker", "container", "create"}
+	cmdArgs = append(cmdArgs, "--label", "devcontainer.local_folder="+d.Path)
+	cmdArgs = append(cmdArgs, d.createArgs()...)
 	if len(d.Command) > 0 {
 		cmdArgs = append(cmdArgs, d.Command...)
 	}
@@ -193,50 +199,28 @@ func (d *Docker) Create() (string, error) {
 
 // Start start the given container
 func (d *Docker) Start() (string, error) {
-	// build and create if not it does not exists
-	if d.Container == "" {
-		if _, err := d.Build(); err != nil {
-			return "", err
-		}
-		if container, err := d.Create(); err != nil {
-			return "", err
-		} else {
-			d.Container = container
-		}
-	}
-	// skip if already started
-	if d.Running {
-		return "", nil
-	}
-
+	container, _ := d.GetContainer()
 	cmdArgs := []string{"docker", "container", "start"}
 	cmdArgs = append(cmdArgs, d.Args...)
-	cmdArgs = append(cmdArgs, d.Container)
+	cmdArgs = append(cmdArgs, container)
 
 	return d._ExecCmd(cmdArgs, true)
 }
 
 // Stop stop the given container
 func (d *Docker) Stop() (string, error) {
-	// skip if already stopped
-	if !d.Running {
-		return "", nil
-	}
-
+	container, _ := d.GetContainer()
 	cmdArgs := []string{"docker", "container", "stop"}
-	cmdArgs = append(cmdArgs, d.Container)
+	cmdArgs = append(cmdArgs, container)
 
 	return d._ExecCmd(cmdArgs, true)
 }
 
 // Remove remove the container
 func (d *Docker) Remove() (string, error) {
-	// skip if container does not exist
-	if d.Container == "" {
-		return "", nil
-	}
+	container, _ := d.GetContainer()
 	cmdArgs := []string{"docker", "container", "rm"}
-	cmdArgs = append(cmdArgs, d.Container)
+	cmdArgs = append(cmdArgs, container)
 
 	return d._ExecCmd(cmdArgs, true)
 }
@@ -248,15 +232,24 @@ func (d *Docker) List() (string, error) {
 	return d._ExecCmd(cmdArgs, false)
 }
 
-// Exec execute the given command into the given container
-func (d *Docker) Exec(command []string, withEnv bool, capture bool) (string, error) {
-	// start container if not running
-	if !d.Running {
-		if _, err := d.Start(); err != nil {
-			return "", err
-		}
+// Run run the given command into a container
+func (d *Docker) Run(command []string) (string, error) {
+	cmdArgs := []string{"docker", "container", "run"}
+	cmdArgs = append(cmdArgs, "--interactive", "--tty")
+	cmdArgs = append(cmdArgs, "--workdir", d.WorkDir)
+	if d.RemoteUser != "" {
+		cmdArgs = append(cmdArgs, "--user", d.RemoteUser)
 	}
+	cmdArgs = append(cmdArgs, d.Args...)
+	cmdArgs = append(cmdArgs, d.createArgs()...)
+	cmdArgs = append(cmdArgs, command...)
 
+	return d._ExecCmd(cmdArgs, true)
+}
+
+// Exec execute the given command into the given container
+func (d *Docker) Exec(command []string) (string, error) {
+	container, _ := d.GetContainer()
 	cmdArgs := []string{"docker", "container", "exec"}
 	cmdArgs = append(cmdArgs, "--interactive", "--tty")
 	cmdArgs = append(cmdArgs, "--workdir", d.WorkDir)
@@ -264,22 +257,20 @@ func (d *Docker) Exec(command []string, withEnv bool, capture bool) (string, err
 		cmdArgs = append(cmdArgs, "--user", d.RemoteUser)
 	}
 	// resolve containerEnv variables
-	if withEnv {
-		d.RemoteEnvs = lo.Map(d.RemoteEnvs, func(v string, _ int) string { return resolveContainerEnv(d, v) })
-		for _, env := range d.RemoteEnvs {
-			cmdArgs = append(cmdArgs, "--env", env)
-		}
+	d.RemoteEnvs = lo.Map(d.RemoteEnvs, func(v string, _ int) string { return resolveContainerEnv(d, v) })
+	for _, env := range d.RemoteEnvs {
+		cmdArgs = append(cmdArgs, "--env", env)
 	}
-	cmdArgs = append(cmdArgs, d.Container)
+	cmdArgs = append(cmdArgs, container)
 	cmdArgs = append(cmdArgs, command...)
 
-	return d._ExecCmd(cmdArgs, capture)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // ResolveEnv resolve environment variable from inside the container
 func (d *Docker) ResolveEnv(env string) string {
 	cmd := []string{"echo", "$" + env}
-	resolved, err := d.Exec(cmd, false, true)
+	resolved, err := d.Run(cmd)
 	if err != nil {
 		panic(err)
 	}

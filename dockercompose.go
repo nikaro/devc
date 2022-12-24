@@ -59,10 +59,33 @@ func (d *DockerCompose) Init(c *DevContainer) error {
 	return nil
 }
 
-// IsRunning return the container status
+// IsBuilt return the image build status
+func (d *DockerCompose) IsBuilt() (bool, error) {
+	cmdArgs := d.cmd("images")
+	cmdArgs = append(cmdArgs, "--quiet")
+	out, err := d._ExecCmd(cmdArgs, true)
+	images := lo.Filter(strings.Split(out, "\n"), func(x string, _ int) bool { return x != "" })
+	built := len(images) > 0
+
+	return built, err
+}
+
+// IsCreated return the container creation status
+func (d *DockerCompose) IsCreated() (bool, error) {
+	cmdArgs := d.cmd("ps")
+	cmdArgs = append(cmdArgs, "--quiet")
+	out, err := d._ExecCmd(cmdArgs, true)
+	containers := lo.Filter(strings.Split(out, "\n"), func(x string, _ int) bool { return x != "" })
+	created := len(containers) > 0
+
+	return created, err
+}
+
+// IsRunning return the container running status
 func (d *DockerCompose) IsRunning() (bool, error) {
 	cmdArgs := d.cmd("ps")
 	cmdArgs = append(cmdArgs, "--quiet")
+	cmdArgs = append(cmdArgs, "--status", "running")
 	out, err := d._ExecCmd(cmdArgs, true)
 	containers := lo.Filter(strings.Split(out, "\n"), func(x string, _ int) bool { return x != "" })
 	running := len(containers) > 0
@@ -125,36 +148,40 @@ func (d *DockerCompose) List() (string, error) {
 }
 
 // Exec execute the given command into the given container
-func (d *DockerCompose) Exec(command []string, withEnv bool, capture bool) (string, error) {
-	// start service if not running
-	if !d.Running {
-		if _, err := d.Start(); err != nil {
-			return "", err
-		}
+func (d *DockerCompose) Run(command []string) (string, error) {
+	cmdArgs := d.cmd("run")
+	cmdArgs = append(cmdArgs, "--workdir", d.WorkDir)
+	if d.User != "" {
+		cmdArgs = append(cmdArgs, "--user", d.User)
 	}
+	cmdArgs = append(cmdArgs, d.Service)
+	cmdArgs = append(cmdArgs, command...)
 
+	return d._ExecCmd(cmdArgs, true)
+}
+
+// Exec execute the given command into the given container
+func (d *DockerCompose) Exec(command []string) (string, error) {
 	cmdArgs := d.cmd("exec")
 	cmdArgs = append(cmdArgs, "--workdir", d.WorkDir)
 	if d.User != "" {
 		cmdArgs = append(cmdArgs, "--user", d.User)
 	}
 	// resolve containerEnv variables
-	if withEnv {
-		d.Envs = lo.Map(d.Envs, func(v string, _ int) string { return resolveContainerEnv(d, v) })
-		for _, env := range d.Envs {
-			cmdArgs = append(cmdArgs, "--env", env)
-		}
+	d.Envs = lo.Map(d.Envs, func(v string, _ int) string { return resolveContainerEnv(d, v) })
+	for _, env := range d.Envs {
+		cmdArgs = append(cmdArgs, "--env", env)
 	}
 	cmdArgs = append(cmdArgs, d.Service)
 	cmdArgs = append(cmdArgs, command...)
 
-	return d._ExecCmd(cmdArgs, capture)
+	return d._ExecCmd(cmdArgs, false)
 }
 
 // ResolveEnv resolve environment variable from inside the container
 func (d *DockerCompose) ResolveEnv(env string) string {
 	cmd := []string{"echo", "$" + env}
-	resolved, err := d.Exec(cmd, false, true)
+	resolved, err := d.Run(cmd)
 	if err != nil {
 		panic(err)
 	}
