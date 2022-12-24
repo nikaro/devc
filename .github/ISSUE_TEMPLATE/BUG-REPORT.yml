@@ -13,9 +13,9 @@ body:
   - type: input
     id: repository-url
     attributes:
-      label: Repository URL
-      description: A repository URL with which we can reproduce the issue.
-      placeholder: https://github.com/nikaro/devc.git
+      label: URL
+      description: A repository or gist URL with which we can reproduce the issue.
+      placeholder: https://github.com/myuser/myrepo.git
     validations:
       required: true
   - type: textarea
