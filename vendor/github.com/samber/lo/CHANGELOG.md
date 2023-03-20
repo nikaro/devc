@@ -2,6 +2,19 @@
 
 @samber: I sometimes forget to update this file. Ping me on [Twitter](https://twitter.com/samuelberthe) or open an issue in case of error. We need to keep a clear changelog for easier lib upgrade.
 
+## 1.38.0 (xxxx-xx-xx)
+
+Adding:
+- lo.ValueOr
+- lo.DebounceBy
+- lo.EmptyableToPtr
+
+Improvement:
+- Substring: add support for non-english chars
+
+Fix:
+- Async: Fix goroutine leak
+
 ## 1.37.0 (2022-12-15)
 
 Adding:
