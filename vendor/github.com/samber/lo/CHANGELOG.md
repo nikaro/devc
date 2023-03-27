@@ -2,7 +2,12 @@
 
 @samber: I sometimes forget to update this file. Ping me on [Twitter](https://twitter.com/samuelberthe) or open an issue in case of error. We need to keep a clear changelog for easier lib upgrade.
 
-## 1.38.0 (xxxx-xx-xx)
+## 1.38.1 (2023-03-20)
+
+Improvement:
+- Async and AsyncX: now returns `<-chan T` instead of `chan T`
+
+## 1.38.0 (2023-03-20)
 
 Adding:
 - lo.ValueOr
