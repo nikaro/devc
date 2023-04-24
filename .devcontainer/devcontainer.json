@@ -1,11 +1,29 @@
 {
-  "build": {
-    "dockerfile": "Dockerfile"
+  "name": "devc",
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "GitHub.copilot",
+        "golang.go"
+      ]
+    }
   },
-  "mounts": [
-    "type=bind,source=${localEnv:HOME}/.config/helix,destination=/root/.config/helix"
-  ],
-  "remoteEnv": {
-    "PATH": "${containerEnv:HOME}/go/bin:${containerEnv:PATH}"
+  "features": {
+    "ghcr.io/devcontainers-contrib/features/pre-commit": {},
+    "ghcr.io/devcontainers/features/go:1": {}
+  },
+  "updateContentCommand": "sudo apt-get update --yes --quiet",
+  "postCreateCommand": {
+    "packages": [
+      "sudo",
+      "apt-get",
+      "install",
+      "--yes",
+      "--quiet",
+      "--no-install-recommends",
+      "bash-completion"
+    ]
   }
 }
