@@ -1,3 +1,6 @@
+> **Warning**:
+> This project is unmaintained, i instead recommend the usage of [DevPod](https://github.com/loft-sh/devpod) which is more complete and more popular.
+
 # DevContainer CLI managment tool
 
 `devc` is a simple CLI tool to manage your devcontainers.
